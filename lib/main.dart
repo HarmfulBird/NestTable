@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tableview.dart';
+import 'tableviewsimple.dart';
 import 'navigation.dart';
 
 void main() {

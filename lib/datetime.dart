@@ -9,7 +9,7 @@ class DateTimeBox extends StatelessWidget {
     String formattedDateTime = DateFormat('dd/MM/yyy   hh:mm a').format(DateTime.now());
 
     return Container(
-      padding: EdgeInsets.fromLTRB(35.0, 16.0, 35.0, 16.0),
+      padding: EdgeInsets.fromLTRB(37.0, 16.0, 37.0, 16.0),
       decoration: BoxDecoration(
         color: Color(0xFF212224),
         borderRadius: BorderRadius.circular(15.0),

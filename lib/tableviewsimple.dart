@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'datetime.dart'; // Your custom DateTimeBox class
+import 'datetime.dart';
+import 'tabledata.dart';
+import 'dart:math';
+
+
 
 class TableOverview extends StatefulWidget {
   const TableOverview({super.key});
@@ -9,7 +13,46 @@ class TableOverview extends StatefulWidget {
 }
 
 class _TableOverviewState extends State<TableOverview> {
-  int? selectedTable; // Keeps track of the selected table
+  int? selectedTableIndex;
+  List<TableData> tables = [];
+  final Random _random = Random();
+
+
+  // ------ FAKE DATA START ------
+
+  final List<String> serverInitialsList = ['AR', 'CR', 'JD', 'LS', 'MB', 'TK'];
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize table data - in a real app, you would fetch this from a database or API
+    _initializeTableData();
+  }
+
+
+  String _getRandomServerInitials() {
+    return serverInitialsList[_random.nextInt(serverInitialsList.length)];
+  }
+
+  void _initializeTableData() {
+    for (int i = 1; i <= 8; i++) {
+      String status = i % 3 == 0 ? 'Open' : (i % 2 == 0 ? 'Seated' : 'Reserved');
+
+      tables.add(
+        TableData(
+          tableNumber: i,
+          capacity: 4,
+          serverInitials: _getRandomServerInitials(),
+          status: status,
+          statusColor:
+          status == 'Open' ? Colors.green :
+          (status == 'Seated' ? Colors.red : Colors.orange),
+          currentGuests: status == 'Open' ? 0 : (i % 4 + 1),
+        ),
+      );
+    }
+  }
+  // ------ FAKE DATA END ------
 
   @override
   Widget build(BuildContext context) {
@@ -21,45 +64,47 @@ class _TableOverviewState extends State<TableOverview> {
               children: [
                 Container(
                   width: 400,
-                  padding: EdgeInsets.all(16.0),
-                  color: Color(int.parse("0xFF2F3031")),
+                  padding: const EdgeInsets.all(16.0),
+                  color: const Color(0xFF2F3031),
                   child: Column(
                     children: [
-                      DateTimeBox(),
-                      SizedBox(height: 20),
-                      DisplayBox(selectedTable: selectedTable),
+                      const DateTimeBox(),
+                      const SizedBox(height: 20),
+                      TableInfoBox(
+                        selectedTable: selectedTableIndex != null ? tables[selectedTableIndex!] : null,
+                      ),
+                      const SizedBox(height: 20),
+                      UpcomingBox(selectedTable: null)
                     ],
                   ),
                 ),
 
                 // ---- Right Hand Area ----
                 Expanded(
-                  child:
-                  Container(
-                    color: Color(int.parse("0xFF212224")),
+                  child: Container(
+                    color: const Color(0xFF212224),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: GridView.builder(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2, // Number of columns
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
                           crossAxisSpacing: 20,
                           mainAxisSpacing: 20,
                           childAspectRatio: 3 / 1.5, // Adjust this ratio for height control
                         ),
-                        itemCount: 8, // Number of tables
+                        itemCount: tables.length, // Number of tables
                         itemBuilder: (context, index) => TableCard(
-                          index + 1,
-                          isSelected: selectedTable == (index + 1),
-                          onTableSelected: (tableNumber) {
+                          tableData: tables[index],
+                          isSelected: selectedTableIndex == index,
+                          onTableSelected: () {
                             setState(() {
-                              selectedTable = tableNumber; // Update the selected table
+                              selectedTableIndex = index;
                             });
                           },
                         ),
                       ),
                     ),
-                  )
-
+                  ),
                 ),
               ],
             ),
@@ -70,59 +115,13 @@ class _TableOverviewState extends State<TableOverview> {
   }
 }
 
-class DisplayBox extends StatelessWidget {
-  final int? selectedTable;
-
-  const DisplayBox({required this.selectedTable, super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Color(int.parse("0xFF212224")),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: selectedTable != null
-          ? Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Table $selectedTable',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'Guests: Number Here',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 18,
-            ),
-          ),
-        ],
-      )
-          : Text(
-        'No Table Selected',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
-}
-
 class TableCard extends StatelessWidget {
-  final int tableNumber;
+  final TableData tableData;
   final bool isSelected;
-  final Function(int) onTableSelected;
+  final VoidCallback onTableSelected;
 
-  const TableCard(this.tableNumber, {
+  const TableCard({
+    required this.tableData,
     required this.isSelected,
     required this.onTableSelected,
     super.key,
@@ -131,55 +130,55 @@ class TableCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => onTableSelected(tableNumber),
+      onTap: onTableSelected,
       child: Stack(
         children: [
           // Main card content
           Container(
             decoration: BoxDecoration(
-              color: Color(int.parse("0xFF2F3031")), // Background color
-              borderRadius: BorderRadius.circular(15), // Rounded corners
+              color: const Color(0xFF2F3031),
+              borderRadius: BorderRadius.circular(15),
             ),
-            padding: EdgeInsets.all(20), // Inner padding for content
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Text(
-                      'Table $tableNumber',
-                      style: TextStyle(
+                      'Table ${tableData.tableNumber}',
+                      style: const TextStyle(
                         fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white, // White text color
+                        color: Colors.white,
                       ),
                     ),
-                    Spacer(),
+                    const Spacer(),
                     Container(
-                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                       decoration: BoxDecoration(
-                        color: Colors.grey, // Grey background for the box
+                        color: Colors.grey,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        '4', // Number inside the grey box
-                        style: TextStyle(
+                        '${tableData.capacity}',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
-                    SizedBox(width: 20),
+                    const SizedBox(width: 20),
                     Container(
-                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                       decoration: BoxDecoration(
-                        color: Colors.purple, // Purple box
+                        color: Colors.deepPurple,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Text(
-                        'AR',
-                        style: TextStyle(
+                        tableData.serverInitials,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
@@ -188,42 +187,41 @@ class TableCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     Container(
-                      padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                       width: 135,
                       height: 53,
-                      alignment: Alignment.center, // Centers the child (text)
+                      alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: Colors.red, // Red box for seating status
+                        color: tableData.statusColor,
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: FittedBox(
-                        fit: BoxFit.scaleDown, // Scales down text to fit within the container
+                        fit: BoxFit.scaleDown,
                         child: Text(
-                          'Seated',
-                          style: TextStyle(
+                          tableData.status,
+                          style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 30, // Starting font size
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 15),
-                    // Stack for Guests Box with Overlay
+                    const SizedBox(width: 15),
                     Stack(
                       children: [
                         Container(
-                          padding: EdgeInsets.fromLTRB(20, 5, 65, 5),
+                          padding: const EdgeInsets.fromLTRB(20, 5, 65, 5),
                           decoration: BoxDecoration(
-                            color: Color(int.parse("0xFF676767")), // Grey box for guests
+                            color: const Color(0xFF676767),
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: Text(
-                            'Guests', // Text inside the main box
+                          child: const Text(
+                            'Guests',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 30,
@@ -232,17 +230,17 @@ class TableCard extends StatelessWidget {
                           ),
                         ),
                         Positioned(
-                          right: 0, // Position the number in the top-right corner
+                          right: 0,
                           top: 0,
                           child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+                            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
                             decoration: BoxDecoration(
-                              color: Color(int.parse("0xFF454545")), // Blue box for the overlay
+                              color: const Color(0xFF454545),
                               borderRadius: BorderRadius.circular(15),
                             ),
                             child: Text(
-                              '4', // Overlayed number
-                              style: TextStyle(
+                              '${tableData.currentGuests}',
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 30,
                                 fontWeight: FontWeight.bold,
@@ -257,13 +255,12 @@ class TableCard extends StatelessWidget {
               ],
             ),
           ),
-          // Selection border overlay
           if (isSelected)
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
-                  border: Border.all(color: Color(int.parse("0xFF72D9FF")), width: 3), // Blue border
-                  borderRadius: BorderRadius.circular(15), // Same rounded corners
+                  border: Border.all(color: const Color(0xFF72D9FF), width: 3),
+                  borderRadius: BorderRadius.circular(15),
                 ),
               ),
             ),
