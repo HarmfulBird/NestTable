@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'custom_icons_icons.dart';
 import 'tableview.dart';
 import 'navigation.dart';
 
@@ -8,17 +7,21 @@ void main() {
 }
 
 class NestTableApp extends StatelessWidget {
+  const NestTableApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: ThemeData(fontFamily: 'Kanit',),
       home: HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
@@ -28,13 +31,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     TableOverview(),
-    TableOverview(),
     Page2(),
     Page3(),
     Page4(),
     Page5(),
     Page6(),
-    Page7(),
   ];
 
   void _onIconTapped(int index) {
@@ -75,6 +76,8 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class TopBar extends StatelessWidget {
+  const TopBar({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -91,6 +94,8 @@ class TopBar extends StatelessWidget {
 
 
 class Page2 extends StatelessWidget {
+  const Page2({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 2")));
@@ -98,6 +103,8 @@ class Page2 extends StatelessWidget {
 }
 
 class Page3 extends StatelessWidget {
+  const Page3({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 3")));
@@ -105,6 +112,8 @@ class Page3 extends StatelessWidget {
 }
 
 class Page4 extends StatelessWidget {
+  const Page4({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 4")));
@@ -112,6 +121,8 @@ class Page4 extends StatelessWidget {
 }
 
 class Page5 extends StatelessWidget {
+  const Page5({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 5")));
@@ -119,15 +130,11 @@ class Page5 extends StatelessWidget {
 }
 
 class Page6 extends StatelessWidget {
+  const Page6({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 6")));
   }
 }
 
-class Page7 extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 7")));
-  }
-}

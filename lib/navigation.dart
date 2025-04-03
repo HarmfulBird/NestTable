@@ -3,9 +3,13 @@ import 'custom_icons_icons.dart';
 
 class NavigationSidebar extends StatelessWidget {
   final int selectedIndex;
-  final Function(int) onIconTapped;
+  final ValueChanged<int> onIconTapped;
 
-  NavigationSidebar({required this.selectedIndex, required this.onIconTapped});
+  const NavigationSidebar({
+    super.key,
+    required this.selectedIndex,
+    required this.onIconTapped,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -17,17 +21,18 @@ class NavigationSidebar extends StatelessWidget {
           SizedBox(height: 20),
           Icon(CustomIcons.logo, color: Colors.black, size: 50),
           Spacer(flex: 6),
-          _buildIconButton(1, CustomIcons.th_large_outline, "Tables", false), // No thick effect
+          // Ensure indices align properly here
+          _buildIconButton(0, CustomIcons.th_large_outline, "Tables", false),
           SizedBox(height: 1),
-          _buildIconButton(2, CustomIcons.reservations, "Reservations", true), // Thick effect
+          _buildIconButton(1, CustomIcons.reservations, "Reservations", true),
           SizedBox(height: 1),
-          _buildIconButton(3, CustomIcons.order, "Orders", true), // Thick effect
+          _buildIconButton(2, CustomIcons.order, "Orders", true),
           SizedBox(height: 1),
-          _buildIconButton(4, CustomIcons.group, "Servers", true), // Thick effect
+          _buildIconButton(3, CustomIcons.group, "Servers", true),
           Spacer(flex: 10),
-          _buildIconButton(5, CustomIcons.management, "Management", true), // Thick effect
+          _buildIconButton(4, CustomIcons.management, "Management", true),
           SizedBox(height: 10),
-          _buildIconButton(6, CustomIcons.settings, "Settings", true), // Thick effect
+          _buildIconButton(5, CustomIcons.settings, "Settings", true),
           SizedBox(height: 20),
         ],
       ),
@@ -50,8 +55,8 @@ class NavigationSidebar extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Padding(
-              padding: EdgeInsets.all(addThickness ? 4.0 : 0.0), // Adding padding to create a "thicker" effect
-              child: _iconLayer(icon, isSelected, 50), // Icon with the adjusted size
+              padding: EdgeInsets.all(addThickness ? 4.0 : 0.0),
+              child: _iconLayer(icon, isSelected, 50),
             ),
             SizedBox(height: 4),
             Text(
