@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'custom_icons_icons.dart';
+import '../custom_icons_icons.dart';
 
 class NavigationSidebar extends StatelessWidget {
   final int selectedIndex;

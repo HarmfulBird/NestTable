@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'datetime.dart';
-import 'tableviewdata.dart';
+import '../Components/datetime.dart';
+import '../Components/tableviewdata.dart';
 import 'dart:math';
 
 
