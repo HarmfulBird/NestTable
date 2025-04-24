@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import 'tableviewsimple.dart';
-import 'navigation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'Pages/tableviewsimple.dart';
+import 'Pages/reservations.dart';
+import 'Components/navigation.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(NestTableApp());
 }
 
@@ -31,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _pages = [
     TableOverview(),
-    Page2(),
+    Reservations(),
     Page3(),
     Page4(),
     Page5(),
@@ -88,17 +95,6 @@ class TopBar extends StatelessWidget {
         ],
       ),
     );
-  }
-}
-
-
-
-class Page2 extends StatelessWidget {
-  const Page2({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 2")));
   }
 }
 
