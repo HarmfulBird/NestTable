@@ -13,29 +13,33 @@ class NavigationSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 80,
-      color: Color(int.parse("0xFFE0ACD5")),
-      child: Column(
-        children: [
-          SizedBox(height: 20),
-          Icon(CustomIcons.logo, color: Colors.black, size: 50),
-          Spacer(flex: 6),
-          // Ensure indices align properly here
-          _buildIconButton(0, CustomIcons.th_large_outline, "Tables", false),
-          SizedBox(height: 1),
-          _buildIconButton(1, CustomIcons.reservations, "Reservations", true),
-          SizedBox(height: 1),
-          _buildIconButton(2, CustomIcons.order, "Orders", true),
-          SizedBox(height: 1),
-          _buildIconButton(3, CustomIcons.group, "Servers", true),
-          Spacer(flex: 10),
-          _buildIconButton(4, CustomIcons.management, "Management", true),
-          SizedBox(height: 10),
-          _buildIconButton(5, CustomIcons.settings, "Settings", true),
-          SizedBox(height: 20),
-        ],
-      ),
+    return Row(
+      children: [
+        Container(
+          width: 80,
+          color: Color(int.parse("0xFFE0ACD5")),
+          child: Column(
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              SizedBox(height: 20),
+              Icon(CustomIcons.logo, color: Colors.black, size: 50),
+              SizedBox(height: 40),
+              _buildIconButton(0, CustomIcons.th_large_outline, "Tables", false),
+              SizedBox(height: 1),
+              _buildIconButton(1, CustomIcons.reservations, "Reservations", true),
+              SizedBox(height: 1),
+              _buildIconButton(2, CustomIcons.order, "Orders", true),
+              SizedBox(height: 1),
+              _buildIconButton(3, CustomIcons.group, "Servers", true),
+              Spacer(),
+              _buildIconButton(4, CustomIcons.management, "Management", true),
+              SizedBox(height: 10),
+              _buildIconButton(5, CustomIcons.settings, "Settings", true),
+              SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
