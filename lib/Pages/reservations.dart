@@ -32,7 +32,7 @@ class _ReservationsState extends State<Reservations> {
     // Sample colors for reservations
     final colors = [
       Colors.purple.shade400,
-      Colors.orange.shade400,
+      Colors.cyan.shade400,
       Colors.green.shade400,
       Colors.blue.shade400
     ];
@@ -43,8 +43,8 @@ class _ReservationsState extends State<Reservations> {
         id: 1,
         customerName: 'Samantha Nord',
         tableNumber: 1,
-        startTime: DateTime(2025, 3, 12, 18, 30),
-        endTime: DateTime(2025, 3, 12, 20, 30),
+        startTime: DateTime(2025, 3, 12, 13, 0),
+        endTime: DateTime(2025, 3, 12, 15, 0),
         partySize: 3,
         seated: true,
         isFinished: false,
@@ -53,9 +53,9 @@ class _ReservationsState extends State<Reservations> {
       ReservationData(
         id: 2,
         customerName: 'Harlan Guzman',
-        tableNumber: 4,
-        startTime: DateTime(2025, 3, 12, 19, 0),
-        endTime: DateTime(2025, 3, 12, 21, 0),
+        tableNumber: 2,
+        startTime: DateTime(2025, 3, 12, 14, 0),
+        endTime: DateTime(2025, 3, 12, 16, 0),
         partySize: 4,
         seated: false,
         isFinished: false,
@@ -64,9 +64,9 @@ class _ReservationsState extends State<Reservations> {
       ReservationData(
         id: 3,
         customerName: 'Alex Norton',
-        tableNumber: 4,
-        startTime: DateTime(2025, 3, 12, 21, 30),
-        endTime: DateTime(2025, 3, 12, 23, 30),
+        tableNumber: 3,
+        startTime: DateTime(2025, 3, 12, 15, 0),
+        endTime: DateTime(2025, 3, 12, 17, 0),
         partySize: 4,
         seated: false,
         isFinished: false,
@@ -74,38 +74,16 @@ class _ReservationsState extends State<Reservations> {
       ),
       ReservationData(
         id: 4,
-        customerName: 'Alex Norton',
-        tableNumber: 3,
-        startTime: DateTime(2025, 3, 12, 19, 0),
-        endTime: DateTime(2025, 3, 12, 21, 0),
-        partySize: 2,
-        seated: true,
-        isFinished: false,
-        color: colors[0],
-      ),
-      ReservationData(
-        id: 5,
         customerName: 'Celia May',
-        tableNumber: 7,
-        startTime: DateTime(2025, 3, 12, 20, 0),
-        endTime: DateTime(2025, 3, 12, 22, 0),
+        tableNumber: 4,
+        startTime: DateTime(2025, 3, 13, 16, 0),
+        endTime: DateTime(2025, 3, 13, 18, 0),
         partySize: 3,
         seated: true,
         isFinished: false,
         color: colors[3],
       ),
     ];
-  }
-
-  // Get upcoming reservations for the left panel
-  List<ReservationData> getUpcomingReservations() {
-    final currentDate = DateTime.now();
-    return reservations
-        .where((reservation) =>
-    reservation.startTime.isAfter(currentDate) &&
-        reservation.id != selectedReservation?.id)
-        .take(3)
-        .toList();
   }
 
   @override
@@ -275,7 +253,7 @@ class _ReservationsState extends State<Reservations> {
         tableCapacity = "2-6";
         break;
       case 7:
-        tableCapacity = "3-6";
+        tableCapacity = "2-6";
         break;
       case 8:
         tableCapacity = "2-4";
@@ -300,7 +278,7 @@ class _ReservationsState extends State<Reservations> {
                       "$tableNumber",
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -308,7 +286,7 @@ class _ReservationsState extends State<Reservations> {
                       tableCapacity,
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 11,
+                        fontSize: 16,
                       ),
                     ),
                   ],
@@ -343,88 +321,84 @@ class _ReservationsState extends State<Reservations> {
 
     for (var reservation in tableReservations) {
 
-      final timelineStart = 18;
-      final timelineHours = 4.0;
+      final timelineStart = 13.0;
 
-      final startHour = reservation.startTime.hour + reservation.startTime.minute / 60.0;
-      final endHour = reservation.endTime.hour + reservation.endTime.minute / 60.0;
+      final startHour = reservation.startTime.hour;
+      final endHour = reservation.endTime.hour;
 
-      final startPosition = (startHour - timelineStart) / timelineHours;
-      final width = (endHour - startHour) / timelineHours;
+      final startPosition = (startHour - timelineStart) + 15;
+      final width = (endHour - startHour) * 86;
 
-      if (startPosition < 1.0 && startPosition + width > 0) {
-        reservationWidgets.add(
-          Positioned(
-            left: startPosition * 100,
-            width: width * 200,
-            top: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedReservation = reservation;
-                });
-              },
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 2),
-                decoration: BoxDecoration(
-                  color: reservation.color,
-                  borderRadius: BorderRadius.circular(8),
-                  border: selectedReservation?.id == reservation.id
-                      ? Border.all(color: Colors.white, width: 2)
-                      : null,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Center(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (reservation.partySize > 0) ...[
-                          Container(
-                            padding: const EdgeInsets.all(3),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.people, size: 10, color: Colors.white),
-                                SizedBox(width: 2),
-                                Text(
-                                  "${reservation.partySize}",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
+      reservationWidgets.add(
+        Positioned(
+          left: startPosition + (86 * (startHour - timelineStart)),
+          width: width * 1,
+          top: 0,
+          bottom: 0,
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedReservation = reservation;
+              });
+            },
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 2),
+              decoration: BoxDecoration(
+                color: reservation.color,
+                borderRadius: BorderRadius.circular(8),
+                border: selectedReservation?.id == reservation.id
+                    ? Border.all(color: Colors.white, width: 2)
+                    : null,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (reservation.partySize > 0) ...[
+                        Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
                           ),
-                          SizedBox(width: 6),
-                        ],
-                        Flexible(
-                          child: Text(
-                            reservation.customerName,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.people, size: 16, color: Colors.white),
+                              SizedBox(width: 2),
+                              Text(
+                                "${reservation.partySize}",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        SizedBox(width: 6),
                       ],
-                    ),
+                      Flexible(
+                        child: Text(
+                          reservation.customerName,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
-        );
-      }
+        ),
+      );
     }
 
     return reservationWidgets;
@@ -497,7 +471,7 @@ class _ReservationsState extends State<Reservations> {
                         child: Row(
                           children: [
                             Icon(CustomIcons.group, size: 24, color: Colors.white),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             Text(
                               "${selectedReservation!.partySize}",
                               style: TextStyle(
@@ -518,14 +492,20 @@ class _ReservationsState extends State<Reservations> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    "${selectedReservation!.tableNumber}",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.table_restaurant_outlined, color: Colors.white, size: 24,),
+                      const SizedBox(width: 4),
+                      Text(
+                        "${selectedReservation!.tableNumber}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                    ],
+                  )
                 ),
               ],
             ),
@@ -542,30 +522,37 @@ class _ReservationsState extends State<Reservations> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      "Status",
+                      "Status:",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade400,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child:
-                        selectedReservation!.seated == true
-                          ? const Text(
-                              'Seated',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                          : const
+                    selectedReservation!.seated == true ?
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade400,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child:
+                          Text(
+                            'Seated',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                      ) :
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade400,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child:
                           Text(
                             'Waiting',
                             style: TextStyle(
@@ -574,6 +561,31 @@ class _ReservationsState extends State<Reservations> {
                               fontWeight: FontWeight.bold,
                             ),
                           )
+                      )
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                // Estimated finish time
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Start:",
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                    Text(
+                      formatTime(selectedReservation!.startTime),
+                      style: const TextStyle(
+                        color: Colors.grey,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -587,16 +599,16 @@ class _ReservationsState extends State<Reservations> {
                     const Text(
                       "Estimated Finish:",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.grey,
                         fontWeight: FontWeight.bold,
-                        fontSize: 24,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
                       formatTime(selectedReservation!.endTime),
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
+                        color: Colors.grey,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -605,23 +617,49 @@ class _ReservationsState extends State<Reservations> {
 
                 const SizedBox(height: 16),
 
-                // Action buttons
                 Row(
                   children: [
-                    // Finished button
                     Expanded(
-                      child: ElevatedButton(
+                      child: selectedReservation!.seated == true ?
+                        ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF62CB99),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        child:
+                          Text(
+                            "Finished",
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                      ) :
+                      ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF62CB99),
+                          backgroundColor: Colors.orange.shade400,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: const Text("Finished"),
-                      ),
+                        child:
+                        Text(
+                          "Seat",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      )
                     ),
                     const SizedBox(width: 8),
                     // Edit button
