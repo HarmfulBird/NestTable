@@ -10,6 +10,7 @@ class ReservationData {
   final bool seated;
   final bool isFinished;
   final Color color;
+  final String specialNotes;
 
   ReservationData({
     required this.id,
@@ -21,6 +22,6 @@ class ReservationData {
     required this.seated,
     this.isFinished = false,
     required this.color,
+    this.specialNotes = '',
   });
 }
-

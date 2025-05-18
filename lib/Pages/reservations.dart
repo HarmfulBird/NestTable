@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nesttable/custom_icons_icons.dart';
 import 'dart:math';
@@ -25,7 +26,6 @@ class _ReservationsState extends State<Reservations> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedTable;
-  bool _isLoading = true;
 
   @override
   void initState() {
@@ -39,31 +39,31 @@ class _ReservationsState extends State<Reservations> {
         .orderBy('startTime')
         .snapshots()
         .listen((snapshot) {
-      final List<ReservationData> updatedReservations = [];
-      
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
-        updatedReservations.add(
-          ReservationData(
-            id: data['id'],
-            customerName: data['customerName'] ?? '',
-            tableNumber: data['tableNumber'] ?? 0,
-            startTime: (data['startTime'] as Timestamp).toDate(),
-            endTime: (data['endTime'] as Timestamp).toDate(),
-            partySize: data['partySize'] ?? 0,
-            seated: data['seated'] ?? false,
-            isFinished: data['isFinished'] ?? false,
-            color: _getReservationColor(),
-          ),
-        );
-      }
+          final List<ReservationData> updatedReservations = [];
 
-      setState(() {
-        reservations = updatedReservations;
-        _isLoading = false;
-        _updateSelectedReservation();
-      });
-    });
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+            updatedReservations.add(
+              ReservationData(
+                id: data['id'],
+                customerName: data['customerName'] ?? '',
+                tableNumber: data['tableNumber'] ?? 0,
+                startTime: (data['startTime'] as Timestamp).toDate(),
+                endTime: (data['endTime'] as Timestamp).toDate(),
+                partySize: data['partySize'] ?? 0,
+                seated: data['seated'] ?? false,
+                isFinished: data['isFinished'] ?? false,
+                color: _getReservationColor(),
+                specialNotes: data['specialNotes'] ?? '',
+              ),
+            );
+          }
+
+          setState(() {
+            reservations = updatedReservations;
+            _updateSelectedReservation();
+          });
+        });
   }
 
   Color _getReservationColor() {
@@ -92,20 +92,81 @@ class _ReservationsState extends State<Reservations> {
 
   void _updateSelectedReservation() {
     final currentDayReservations =
-    reservations
-        .where(
-          (res) =>
-      res.startTime.year == currentDate.year &&
-          res.startTime.month == currentDate.month &&
-          res.startTime.day == currentDate.day,
-    )
-        .toList();
+        reservations
+            .where(
+              (res) =>
+                  res.startTime.year == currentDate.year &&
+                  res.startTime.month == currentDate.month &&
+                  res.startTime.day == currentDate.day,
+            )
+            .toList();
 
     if (currentDayReservations.isNotEmpty) {
       selectedReservation = currentDayReservations.first;
     } else {
       selectedReservation = null;
     }
+  }
+
+  Future<void> _saveReservation() async {
+    if (selectedDate == null || selectedTime == null || selectedTable == null) {
+      return;
+    }
+
+    try {
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final startDateTime = DateTime(
+        selectedDate!.year,
+        selectedDate!.month,
+        selectedDate!.day,
+        selectedTime!.hour,
+        selectedTime!.minute,
+      );
+      final endDateTime = startDateTime.add(
+        const Duration(hours: 2),
+      ); // Default 2-hour duration
+
+      await FirebaseFirestore.instance
+          .collection('Reservations')
+          .doc('reservation_$timestamp')
+          .set({
+            'id': timestamp,
+            'customerName':
+                '${firstNameController.text} ${surnameController.text}'.trim(),
+            'tableNumber': int.parse(selectedTable!),
+            'startTime': Timestamp.fromDate(startDateTime),
+            'endTime': Timestamp.fromDate(endDateTime),
+            'partySize': int.parse(guestsController.text),
+            'seated': false,
+            'isFinished': false,
+            'specialNotes': specialNotesController.text,
+          });
+
+      setState(() {
+        showOverlay = false;
+        firstNameController.clear();
+        surnameController.clear();
+        guestsController.clear();
+        specialNotesController.clear();
+        selectedDate = null;
+        selectedTime = null;
+        selectedTable = null;
+      });
+    } catch (e) {
+      // You might want to show an error message to the user here
+      if (kDebugMode) {
+        print('Error saving reservation: $e');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    firstNameController.dispose();
+    surnameController.dispose();
+    guestsController.dispose();
+    specialNotesController.dispose();
+    super.dispose();
   }
 
   @override
@@ -259,8 +320,8 @@ class _ReservationsState extends State<Reservations> {
                               child: Text(
                                 selectedDate != null
                                     ? DateFormat(
-                                  'dd/MM/yyyy',
-                                ).format(selectedDate!)
+                                      'dd/MM/yyyy',
+                                    ).format(selectedDate!)
                                     : 'Select Date',
                                 style: const TextStyle(color: Colors.white),
                               ),
@@ -381,17 +442,15 @@ class _ReservationsState extends State<Reservations> {
                           const SizedBox(width: 16),
                           ElevatedButton(
                             onPressed: () {
-                              // Add reservation logic here
-                              setState(() {
-                                showOverlay = false;
-                                firstNameController.clear();
-                                surnameController.clear();
-                                guestsController.clear();
-                                specialNotesController.clear();
-                                selectedDate = null;
-                                selectedTime = null;
-                                selectedTable = null;
-                              });
+                              if (firstNameController.text.isEmpty ||
+                                  surnameController.text.isEmpty ||
+                                  guestsController.text.isEmpty ||
+                                  selectedDate == null ||
+                                  selectedTime == null ||
+                                  selectedTable == null) {
+                                return;
+                              }
+                              _saveReservation();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
@@ -422,188 +481,209 @@ class _ReservationsState extends State<Reservations> {
     final String formattedPreviousDate = dayFormatter.format(previousDate);
     final String formattedNextDate = dayFormatter.format(nextDate);
 
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 10,
-            bottom: 10,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2F3031),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chevron_left,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                  onPressed: _previousDay,
-                  padding: const EdgeInsets.all(8),
-                ),
-              ),
-              Expanded(
-                flex: 1,
-                child: GestureDetector(
-                  onTap: _previousDay,
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      formattedPreviousDate,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.end,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final isLargeScreen = width > 765;
+        final timeSlotWidth = isLargeScreen ? (width - 45) / 9 : 85.0;
+
+        return SizedBox(
+          width: width,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: max(765.0, width),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.only(
+                      left: 16,
+                      right: 16,
+                      top: 10,
+                      bottom: 10,
                     ),
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: GestureDetector(
-                  onTap: () async {
-                    final DateTime? pickedDate = await showDatePicker(
-                      context: context,
-                      initialDate: currentDate,
-                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.dark(
-                              primary: Colors.white,
-                              onPrimary: Colors.black,
-                              surface: Color(0xFF2F3031),
-                              onSurface: Colors.white,
-                            ),
-                            dialogBackgroundColor: const Color(0xFF2F3031),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2F3031),
+                            shape: BoxShape.circle,
                           ),
-                          child: child!,
-                        );
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.chevron_left,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                            onPressed: _previousDay,
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: GestureDetector(
+                            onTap: _previousDay,
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                formattedPreviousDate,
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 16,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: GestureDetector(
+                            onTap: () async {
+                              final DateTime? pickedDate = await showDatePicker(
+                                context: context,
+                                initialDate: currentDate,
+                                firstDate: DateTime.now().subtract(
+                                  const Duration(days: 365),
+                                ),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365),
+                                ),
+                                builder: (context, child) {
+                                  return Theme(
+                                    data: Theme.of(context).copyWith(
+                                      colorScheme: const ColorScheme.dark(
+                                        primary: Colors.white,
+                                        onPrimary: Colors.black,
+                                        surface: Color(0xFF2F3031),
+                                        onSurface: Colors.white,
+                                      ), dialogTheme: DialogThemeData(backgroundColor: const Color(
+                                        0xFF2F3031,
+                                      )),
+                                    ),
+                                    child: child!,
+                                  );
+                                },
+                              );
+                              if (pickedDate != null) {
+                                setState(() {
+                                  currentDate = pickedDate;
+                                  _updateSelectedReservation();
+                                });
+                              }
+                            },
+                            child: Center(
+                              child: Text(
+                                formattedCurrentDate,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 1,
+                          child: GestureDetector(
+                            onTap: _nextDay,
+                            behavior: HitTestBehavior.translucent,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Text(
+                                formattedNextDate,
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2F3031),
+                            shape: BoxShape.circle,
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.white,
+                              size: 32,
+                            ),
+                            onPressed: _nextDay,
+                            padding: const EdgeInsets.all(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                        left: 45,
+                        right: 12,
+                        top: 10,
+                        bottom: 5,
+                      ),
+                      child: Row(
+                        children: List.generate(9, (index) {
+                          final hour = 1 + index;
+                          final label = "$hour PM";
+                          return SizedBox(
+                            width: timeSlotWidth,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: _buildTimeLabel(label),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 45, right: 12),
+                      child: Row(
+                        children: List.generate(9, (_) {
+                          return SizedBox(
+                            width: timeSlotWidth,
+                            child: Align(
+                              alignment: Alignment.center,
+                              child: Container(
+                                height: 4,
+                                width: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(2),
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.only(top: 16),
+                      itemCount: 8,
+                      itemBuilder: (context, index) {
+                        return _buildTableRow(index + 1, timeSlotWidth);
                       },
-                    );
-                    if (pickedDate != null) {
-                      setState(() {
-                        currentDate = pickedDate;
-                        _updateSelectedReservation();
-                      });
-                    }
-                  },
-                  child: Center(
-                    child: Text(
-                      formattedCurrentDate,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-              Expanded(
-                flex: 1,
-                child: GestureDetector(
-                  onTap: _nextDay,
-                  behavior: HitTestBehavior.translucent,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Text(
-                      formattedNextDate,
-                      style: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFF2F3031),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.chevron_right,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                  onPressed: _nextDay,
-                  padding: const EdgeInsets.all(8),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.only(
-              left: 45,
-              right: 12,
-              top: 10,
-              bottom: 5,
-            ),
-            child: Row(
-              children: List.generate(9, (index) {
-                final hour = 1 + index;
-                final label = "$hour PM";
-                return SizedBox(
-                  width: 85,
-                  child: Align(
-                    alignment:
-                    Alignment.center, // Use Align to center the content
-                    child: _buildTimeLabel(label),
-                  ),
-                );
-              }),
             ),
           ),
-        ),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 45, right: 12),
-            child: Row(
-              children: List.generate(9, (_) {
-                return SizedBox(
-                  width: 85,
-                  child: Align(
-                    alignment: Alignment.center, // Align instead of Center
-                    child: Container(
-                      height: 4,
-                      width: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.only(top: 16),
-            itemCount: 8, // 8 tables
-            itemBuilder: (context, index) {
-              return _buildTableRow(index + 1);
-            },
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -618,7 +698,7 @@ class _ReservationsState extends State<Reservations> {
     );
   }
 
-  Widget _buildTableRow(int tableNumber) {
+  Widget _buildTableRow(int tableNumber, double timeSlotWidth) {
     String tableCapacity;
     switch (tableNumber) {
       case 1:
@@ -685,7 +765,12 @@ class _ReservationsState extends State<Reservations> {
             child: Container(
               height: 40,
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Stack(children: _buildReservationsForTable(tableNumber)),
+              child: Stack(
+                children: _buildReservationsForTable(
+                  tableNumber,
+                  timeSlotWidth,
+                ),
+              ),
             ),
           ),
         ],
@@ -693,23 +778,26 @@ class _ReservationsState extends State<Reservations> {
     );
   }
 
-  List<Widget> _buildReservationsForTable(int tableNumber) {
+  List<Widget> _buildReservationsForTable(
+    int tableNumber,
+    double timeSlotWidth,
+  ) {
     List<Widget> reservationWidgets = [];
-
     final tableReservations =
-    reservations
-        .where(
-          (res) =>
-      res.tableNumber == tableNumber &&
-          res.startTime.year == currentDate.year &&
-          res.startTime.month == currentDate.month &&
-          res.startTime.day == currentDate.day,
-    )
-        .toList();
+        reservations
+            .where(
+              (res) =>
+                  res.tableNumber == tableNumber &&
+                  res.startTime.year == currentDate.year &&
+                  res.startTime.month == currentDate.month &&
+                  res.startTime.day == currentDate.day,
+            )
+            .toList();
 
     final double timelineStart = 12.75;
-    final double pixelsPerHour = 85.0;
+    final double pixelsPerHour = timeSlotWidth;
 
+    // Draw time grid lines
     for (double hour = 13; hour <= 21; hour++) {
       final double gridLeft = ((hour - timelineStart) * pixelsPerHour);
       reservationWidgets.add(
@@ -722,18 +810,15 @@ class _ReservationsState extends State<Reservations> {
       );
     }
 
+    // Draw reservations
     for (var reservation in tableReservations) {
       final double startHour =
           reservation.startTime.hour + reservation.startTime.minute / 60.0;
       final double endHour =
           reservation.endTime.hour + reservation.endTime.minute / 60.0;
 
-      final double left = double.parse(
-        ((startHour - timelineStart) * pixelsPerHour).toStringAsFixed(2),
-      );
-      final double width = double.parse(
-        ((endHour - startHour) * pixelsPerHour).toStringAsFixed(2),
-      );
+      final double left = ((startHour - timelineStart) * pixelsPerHour);
+      final double width = ((endHour - startHour) * pixelsPerHour);
 
       reservationWidgets.add(
         Positioned(
@@ -753,9 +838,9 @@ class _ReservationsState extends State<Reservations> {
                 color: reservation.color,
                 borderRadius: BorderRadius.circular(8),
                 border:
-                selectedReservation?.id == reservation.id
-                    ? Border.all(color: Colors.white, width: 2)
-                    : null,
+                    selectedReservation?.id == reservation.id
+                        ? Border.all(color: Colors.white, width: 2)
+                        : null,
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -945,41 +1030,41 @@ class _ReservationsState extends State<Reservations> {
                     ),
                     selectedReservation!.seated == true
                         ? Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade400,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Seated',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    )
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade400,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Seated',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
                         : Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade400,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Waiting',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange.shade400,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            'Waiting',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1005,7 +1090,6 @@ class _ReservationsState extends State<Reservations> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Estimated finish time
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -1027,53 +1111,74 @@ class _ReservationsState extends State<Reservations> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                const Text(
+                  "Special Notes:",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1B1D),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    selectedReservation!.specialNotes,
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
                       child:
-                      selectedReservation!.seated == true
-                          ? ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF62CB99),
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          "Finished",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      )
-                          : ElevatedButton(
-                        onPressed: () {},
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade400,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(
-                          "Seat",
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+                          selectedReservation!.seated == true
+                              ? ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF62CB99),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Finished",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              )
+                              : ElevatedButton(
+                                onPressed: () {},
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange.shade400,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: Text(
+                                  "Seat",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                     ),
                     const SizedBox(width: 8),
                     // Edit button
