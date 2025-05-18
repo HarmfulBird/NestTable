@@ -4,6 +4,7 @@ import 'dart:math';
 import '../Components/datetime.dart';
 import '../Components/reservationdata.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Reservations extends StatefulWidget {
   const Reservations({super.key});
@@ -15,8 +16,7 @@ class Reservations extends StatefulWidget {
 class _ReservationsState extends State<Reservations> {
   ReservationData? selectedReservation;
   List<ReservationData> reservations = [];
-  final Random _random = Random();
-  DateTime currentDate = DateTime(2025, 3, 12);
+  DateTime currentDate = DateTime.now();
   bool showOverlay = false;
   TextEditingController firstNameController = TextEditingController();
   TextEditingController surnameController = TextEditingController();
@@ -25,70 +25,55 @@ class _ReservationsState extends State<Reservations> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedTable;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _generateSampleData();
-    if (reservations.isNotEmpty) {
-      selectedReservation = reservations.first;
-    }
+    _listenToReservations();
   }
 
-  void _generateSampleData() {
+  void _listenToReservations() {
+    FirebaseFirestore.instance
+        .collection('Reservations')
+        .orderBy('startTime')
+        .snapshots()
+        .listen((snapshot) {
+      final List<ReservationData> updatedReservations = [];
+      
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        updatedReservations.add(
+          ReservationData(
+            id: data['id'],
+            customerName: data['customerName'] ?? '',
+            tableNumber: data['tableNumber'] ?? 0,
+            startTime: (data['startTime'] as Timestamp).toDate(),
+            endTime: (data['endTime'] as Timestamp).toDate(),
+            partySize: data['partySize'] ?? 0,
+            seated: data['seated'] ?? false,
+            isFinished: data['isFinished'] ?? false,
+            color: _getReservationColor(),
+          ),
+        );
+      }
+
+      setState(() {
+        reservations = updatedReservations;
+        _isLoading = false;
+        _updateSelectedReservation();
+      });
+    });
+  }
+
+  Color _getReservationColor() {
     final colors = [
       Colors.purple.shade400,
       Colors.cyan.shade400,
       Colors.green.shade400,
       Colors.blue.shade400,
     ];
-
-    reservations = [
-      ReservationData(
-        id: 1,
-        customerName: 'Samantha Nord',
-        tableNumber: 1,
-        startTime: DateTime(2025, 3, 12, 13, 0),
-        endTime: DateTime(2025, 3, 12, 15, 0),
-        partySize: 3,
-        seated: true,
-        isFinished: false,
-        color: colors[0],
-      ),
-      ReservationData(
-        id: 2,
-        customerName: 'Harlan Guzman',
-        tableNumber: 2,
-        startTime: DateTime(2025, 3, 12, 13, 30),
-        endTime: DateTime(2025, 3, 12, 16, 0),
-        partySize: 4,
-        seated: false,
-        isFinished: false,
-        color: colors[1],
-      ),
-      ReservationData(
-        id: 3,
-        customerName: 'Alex Norton',
-        tableNumber: 3,
-        startTime: DateTime(2025, 3, 12, 15, 0),
-        endTime: DateTime(2025, 3, 12, 17, 0),
-        partySize: 4,
-        seated: false,
-        isFinished: false,
-        color: colors[2],
-      ),
-      ReservationData(
-        id: 4,
-        customerName: 'Celia May',
-        tableNumber: 4,
-        startTime: DateTime(2025, 3, 13, 16, 0),
-        endTime: DateTime(2025, 3, 13, 18, 0),
-        partySize: 3,
-        seated: true,
-        isFinished: false,
-        color: colors[3],
-      ),
-    ];
+    return colors[DateTime.now().microsecond % colors.length];
   }
 
   void _previousDay() {
@@ -450,7 +435,7 @@ class _ReservationsState extends State<Reservations> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xFF2F3031),
                   shape: BoxShape.circle,
                 ),
@@ -484,13 +469,43 @@ class _ReservationsState extends State<Reservations> {
               ),
               Expanded(
                 flex: 2,
-                child: Center(
-                  child: Text(
-                    formattedCurrentDate,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                child: GestureDetector(
+                  onTap: () async {
+                    final DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: currentDate,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now().add(const Duration(days: 365)),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: const ColorScheme.dark(
+                              primary: Colors.white,
+                              onPrimary: Colors.black,
+                              surface: Color(0xFF2F3031),
+                              onSurface: Colors.white,
+                            ),
+                            dialogBackgroundColor: const Color(0xFF2F3031),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        currentDate = pickedDate;
+                        _updateSelectedReservation();
+                      });
+                    }
+                  },
+                  child: Center(
+                    child: Text(
+                      formattedCurrentDate,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -513,7 +528,7 @@ class _ReservationsState extends State<Reservations> {
                 ),
               ),
               Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Color(0xFF2F3031),
                   shape: BoxShape.circle,
                 ),

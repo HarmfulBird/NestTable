@@ -1,16 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:provider/provider.dart';
 import 'Pages/tableviewsimple.dart';
 import 'Pages/reservations.dart';
 import 'Components/navigation.dart';
+
+import 'Pages/DataUploaders/uploaderSelector.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(NestTableApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => TableProvider(),
+      child: const NestTableApp(),
+    ),
+  );
+  ;
 }
 
 class NestTableApp extends StatelessWidget {
@@ -41,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Reservations(),
     Page3(),
     Page4(),
-    Page5(),
+    PageSelector(),
     Page6(),
   ];
 
