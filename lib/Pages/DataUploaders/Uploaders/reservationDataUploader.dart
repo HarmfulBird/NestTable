@@ -6,7 +6,8 @@ class ReservationDataUploader extends StatefulWidget {
   const ReservationDataUploader({Key? key}) : super(key: key);
 
   @override
-  _ReservationDataUploaderState createState() => _ReservationDataUploaderState();
+  _ReservationDataUploaderState createState() =>
+      _ReservationDataUploaderState();
 }
 
 class _ReservationDataUploaderState extends State<ReservationDataUploader> {
@@ -16,13 +17,13 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
   bool _isEditing = false;
   int _editingIndex = -1;
 
-  // Remove _idController since we'll auto-generate IDs
   final _customerNameController = TextEditingController();
   final _tableNumberController = TextEditingController();
   final _partySizeController = TextEditingController();
   final _startTimeController = TextEditingController();
   final _endTimeController = TextEditingController();
-  
+  final _specialNotesController = TextEditingController();
+
   DateTime? _selectedStartTime;
   DateTime? _selectedEndTime;
 
@@ -40,6 +41,7 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     _partySizeController.dispose();
     _startTimeController.dispose();
     _endTimeController.dispose();
+    _specialNotesController.dispose();
     super.dispose();
   }
 
@@ -49,10 +51,11 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     });
 
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('Reservations')
-          .orderBy('startTime')
-          .get();
+      final snapshot =
+          await FirebaseFirestore.instance
+              .collection('Reservations')
+              .orderBy('startTime')
+              .get();
 
       final List<ReservationData> fetchedReservations = [];
 
@@ -69,6 +72,7 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
             seated: data['seated'] ?? false,
             isFinished: data['isFinished'] ?? false,
             color: Colors.purple.shade400,
+            specialNotes: data['specialNotes'] ?? '',
           ),
         );
       }
@@ -93,6 +97,7 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     _partySizeController.clear();
     _startTimeController.clear();
     _endTimeController.clear();
+    _specialNotesController.clear();
     _selectedStartTime = null;
     _selectedEndTime = null;
     _isEditing = false;
@@ -100,9 +105,9 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _selectStartTime() async {
@@ -116,7 +121,9 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     if (date != null) {
       final TimeOfDay? time = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedStartTime ?? DateTime.now()),
+        initialTime: TimeOfDay.fromDateTime(
+          _selectedStartTime ?? DateTime.now(),
+        ),
       );
 
       if (time != null) {
@@ -145,7 +152,8 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
 
     final DateTime? date = await showDatePicker(
       context: context,
-      initialDate: _selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2)),
+      initialDate:
+          _selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2)),
       firstDate: _selectedStartTime!,
       lastDate: _selectedStartTime!.add(const Duration(days: 1)),
     );
@@ -153,7 +161,9 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     if (date != null) {
       final TimeOfDay? time = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2))),
+        initialTime: TimeOfDay.fromDateTime(
+          _selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2)),
+        ),
       );
 
       if (time != null) {
@@ -199,7 +209,10 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
     try {
       // Generate a unique ID using timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final id = _isEditing ? int.parse(_reservations[_editingIndex].id.toString()) : timestamp;
+      final id =
+          _isEditing
+              ? int.parse(_reservations[_editingIndex].id.toString())
+              : timestamp;
 
       final reservationData = ReservationData(
         id: id,
@@ -211,23 +224,27 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
         seated: false,
         isFinished: false,
         color: Colors.purple.shade400,
+        specialNotes: _specialNotesController.text,
       );
 
       await FirebaseFirestore.instance
           .collection('Reservations')
           .doc('reservation_$id')
           .set({
-        'id': id,
-        'customerName': _customerNameController.text,
-        'tableNumber': int.parse(_tableNumberController.text),
-        'startTime': Timestamp.fromDate(_selectedStartTime!),
-        'endTime': Timestamp.fromDate(_selectedEndTime!),
-        'partySize': int.parse(_partySizeController.text),
-        'seated': false,
-        'isFinished': false,
-      });
+            'id': id,
+            'customerName': _customerNameController.text,
+            'tableNumber': int.parse(_tableNumberController.text),
+            'startTime': Timestamp.fromDate(_selectedStartTime!),
+            'endTime': Timestamp.fromDate(_selectedEndTime!),
+            'partySize': int.parse(_partySizeController.text),
+            'seated': false,
+            'isFinished': false,
+            'specialNotes': _specialNotesController.text,
+          });
 
-      if (_isEditing && _editingIndex >= 0 && _editingIndex < _reservations.length) {
+      if (_isEditing &&
+          _editingIndex >= 0 &&
+          _editingIndex < _reservations.length) {
         setState(() {
           _reservations[_editingIndex] = reservationData;
         });
@@ -285,200 +302,358 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
       _selectedEndTime = reservation.endTime;
       _startTimeController.text = _formatDateTime(reservation.startTime);
       _endTimeController.text = _formatDateTime(reservation.endTime);
+      _specialNotesController.text = reservation.specialNotes;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF212224),
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Reservation' : 'Add Reservation'),
+        title: Text(
+          _isEditing ? 'Edit Reservation' : 'Add Reservation',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF2F3031),
         actions: [
           if (_isEditing)
             IconButton(
-              icon: const Icon(Icons.cancel),
+              icon: const Icon(Icons.cancel, color: Colors.white),
               onPressed: _resetForm,
               tooltip: 'Cancel Editing',
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchExistingReservations,
             tooltip: 'Refresh Reservations',
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _isEditing ? 'Edit Reservation' : 'Add New Reservation',
-                                style: Theme.of(context).textTheme.headlineSmall,
-                              ),
-                              const SizedBox(height: 16),
-                              TextFormField(
-                                controller: _customerNameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Customer Name',
-                                  border: OutlineInputBorder(),
+      body:
+          _isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.deepPurple),
+              )
+              : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Card(
+                        color: const Color(0xFF2F3031),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isEditing
+                                      ? 'Edit Reservation'
+                                      : 'Add New Reservation',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter customer name';
-                                  }
-                                  return null;
-                                },
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _tableNumberController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Table Number',
-                                        border: OutlineInputBorder(),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _customerNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Customer Name',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade700,
                                       ),
-                                      keyboardType: TextInputType.number,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter table number';
-                                        }
-                                        if (int.tryParse(value) == null) {
-                                          return 'Please enter a valid number';
-                                        }
-                                        return null;
-                                      },
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _partySizeController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Party Size',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please enter party size';
-                                        }
-                                        if (int.tryParse(value) == null) {
-                                          return 'Please enter a valid number';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _startTimeController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'Start Time',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      readOnly: true,
-                                      onTap: _selectStartTime,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select start time';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: _endTimeController,
-                                      decoration: const InputDecoration(
-                                        labelText: 'End Time',
-                                        border: OutlineInputBorder(),
-                                      ),
-                                      readOnly: true,
-                                      onTap: _selectEndTime,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Please select end time';
-                                        }
-                                        return null;
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: _saveReservation,
-                                style: ElevatedButton.styleFrom(
-                                  minimumSize: const Size(double.infinity, 50),
+                                  style: const TextStyle(color: Colors.white),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter customer name';
+                                    }
+                                    return null;
+                                  },
                                 ),
-                                child: Text(_isEditing ? 'Update Reservation' : 'Add Reservation'),
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _startTimeController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Start Time',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                          suffixIcon: IconButton(
+                                            icon: const Icon(
+                                              Icons.calendar_today,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: _selectStartTime,
+                                          ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        readOnly: true,
+                                        onTap: _selectStartTime,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _endTimeController,
+                                        decoration: InputDecoration(
+                                          labelText: 'End Time',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                          suffixIcon: IconButton(
+                                            icon: const Icon(
+                                              Icons.calendar_today,
+                                              color: Colors.white,
+                                            ),
+                                            onPressed: _selectEndTime,
+                                          ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        readOnly: true,
+                                        onTap: _selectEndTime,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _tableNumberController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Table Number',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter table number';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _partySizeController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Party Size',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter party size';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _specialNotesController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Special Notes',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  style: const TextStyle(color: Colors.white),
+                                  maxLines: 3,
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _saveReservation,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurple,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _isEditing
+                                        ? 'Update Reservation'
+                                        : 'Add Reservation',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Current Reservations',
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: 16),
-                            _reservations.isEmpty
-                                ? const Center(
+                      const SizedBox(height: 24),
+                      Card(
+                        color: const Color(0xFF2F3031),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Current Reservations',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _reservations.isEmpty
+                                  ? const Center(
                                     child: Padding(
                                       padding: EdgeInsets.all(16.0),
-                                      child: Text('No reservations yet. Add one above.'),
+                                      child: Text(
+                                        'No reservations yet. Add one above.',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                     ),
                                   )
-                                : ListView.builder(
+                                  : ListView.builder(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: _reservations.length,
                                     itemBuilder: (context, index) {
                                       final reservation = _reservations[index];
                                       return Card(
-                                        margin: const EdgeInsets.only(bottom: 8.0),
+                                        margin: const EdgeInsets.only(
+                                          bottom: 8.0,
+                                        ),
+                                        color: const Color(0xFF212224),
                                         child: ListTile(
-                                          title: Text(reservation.customerName),
+                                          title: Text(
+                                            reservation.customerName,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                           subtitle: Text(
-                                              'Table: ${reservation.tableNumber} | Party: ${reservation.partySize} | Start: ${_formatDateTime(reservation.startTime)} | End: ${_formatDateTime(reservation.endTime)}'),
+                                            'Table: ${reservation.tableNumber} | Party: ${reservation.partySize} | ${_formatDateTime(reservation.startTime)}',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade400,
+                                            ),
+                                          ),
                                           trailing: Row(
                                             mainAxisSize: MainAxisSize.min,
                                             children: [
                                               IconButton(
-                                                icon: const Icon(Icons.edit),
-                                                onPressed: () => _editReservation(reservation, index),
+                                                icon: const Icon(
+                                                  Icons.edit,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () => _editReservation(
+                                                      reservation,
+                                                      index,
+                                                    ),
                                               ),
                                               IconButton(
-                                                icon: const Icon(Icons.delete),
-                                                onPressed: () => _deleteReservation(reservation.id),
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () => _deleteReservation(
+                                                      reservation.id,
+                                                    ),
                                               ),
                                             ],
                                           ),
@@ -486,14 +661,14 @@ class _ReservationDataUploaderState extends State<ReservationDataUploader> {
                                       );
                                     },
                                   ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
     );
   }
 }

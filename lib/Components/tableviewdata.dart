@@ -46,7 +46,7 @@ class Reservation {
     return Reservation(
       id: doc.id,
       startTime: (data['startTime'] as Timestamp).toDate(),
-      name: data['name'] ?? 'Unknown',
+      name: data['customerName'] ?? 'Unknown',
       partySize: data['partySize'] ?? 0,
       phoneNumber: data['phoneNumber'] ?? '',
       notes: data['notes'] ?? '',
@@ -58,10 +58,7 @@ class Reservation {
 class TableInfoBox extends StatelessWidget {
   final TableData? selectedTable;
 
-  const TableInfoBox({
-    required this.selectedTable,
-    super.key,
-  });
+  const TableInfoBox({required this.selectedTable, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -73,140 +70,150 @@ class TableInfoBox extends StatelessWidget {
         color: const Color(0xFF212224),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: selectedTable != null
-          ? Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Table ${selectedTable!.tableNumber}',
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const Spacer(),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-                width: 135,
-                height: 53,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selectedTable!.statusColor,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    selectedTable!.status,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                    ),
+      child:
+          selectedTable != null
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        'Table ${selectedTable!.tableNumber}',
+                        style: const TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 5,
+                          horizontal: 20,
+                        ),
+                        width: 135,
+                        height: 53,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: selectedTable!.statusColor,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            selectedTable!.status,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
 
-          const SizedBox(height: 15),
+                  const SizedBox(height: 15),
 
-          Row(
-            children: [
-              Text(
-                'Capacity: ',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 15),
-                decoration: BoxDecoration(
-                  color: Color(int.parse('0xFF454545')),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  selectedTable!.capacity.toString(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
+                  Row(
+                    children: [
+                      Text(
+                        'Capacity: ',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 3,
+                          horizontal: 15,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(int.parse('0xFF454545')),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          selectedTable!.capacity.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 20),
+
+                      const Text(
+                        'Server: ',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 24,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 3,
+                          horizontal: 15,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.deepPurple,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          selectedTable!.assignedServer,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+
+                  const SizedBox(height: 30),
+
+                  Row(
+                    children: [
+                      Text(
+                        'Guests Seated: ',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 28,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 2,
+                          horizontal: 15,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Color(int.parse('0xFF454545')),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          selectedTable!.currentGuests.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 28,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              )
+              : const Text(
+                'No Table Selected',
+                style: TextStyle(color: Colors.white70, fontSize: 26),
               ),
-
-              const SizedBox(width: 20,),
-
-              const Text(
-                'Server: ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 15),
-                decoration: BoxDecoration(
-                  color: Colors.deepPurple,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  selectedTable!.assignedServer,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 24,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 30),
-
-          Row(
-              children: [
-                Text(
-                  'Guests Seated: ',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 28,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 15),
-                  decoration: BoxDecoration(
-                    color: Color(int.parse('0xFF454545')),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    selectedTable!.currentGuests.toString(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 28,
-                    ),
-                  ),
-                ),
-              ]
-          ),
-          const SizedBox(height: 10),
-        ],
-      )
-          : const Text(
-        'No Table Selected',
-        style: TextStyle(
-          color: Colors.white70,
-          fontSize: 26,
-        ),
-      ),
     );
   }
 }
@@ -214,10 +221,8 @@ class TableInfoBox extends StatelessWidget {
 class ReservationItem extends StatelessWidget {
   final Reservation reservation;
 
-  const ReservationItem({
-    required this.reservation,
-    Key? key,
-  }) : super(key: key);
+  const ReservationItem({required this.reservation, Key? key})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -235,7 +240,7 @@ class ReservationItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.deepPurple,
+              color: const Color(0xFF454545),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(
@@ -264,9 +269,12 @@ class ReservationItem extends StatelessWidget {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 2,
+                        horizontal: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.indigo,
+                        color: const Color(0xFF454545),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
@@ -296,11 +304,7 @@ class ReservationItem extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8.0),
               child: Tooltip(
                 message: reservation.phoneNumber,
-                child: const Icon(
-                  Icons.phone,
-                  color: Colors.white70,
-                  size: 18,
-                ),
+                child: const Icon(Icons.phone, color: Colors.white70, size: 18),
               ),
             ),
           if (reservation.notes.isNotEmpty)
@@ -322,18 +326,13 @@ class UpcomingBox extends StatelessWidget {
   // Making selectedTable optional since we'll now show all reservations
   final TableData? selectedTable;
 
-  const UpcomingBox({
-    this.selectedTable,
-    super.key,
-  });
+  const UpcomingBox({this.selectedTable, super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      constraints: const BoxConstraints(
-        maxHeight: 385,
-      ),
+      constraints: const BoxConstraints(maxHeight: 385),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF212224),
@@ -362,9 +361,7 @@ class UpcomingBox extends StatelessWidget {
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.deepPurple,
-                    ),
+                    child: CircularProgressIndicator(color: Colors.deepPurple),
                   );
                 }
 
@@ -383,10 +380,7 @@ class UpcomingBox extends StatelessWidget {
                   return const Center(
                     child: Text(
                       'No Upcoming Reservations',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 20,
-                      ),
+                      style: TextStyle(color: Colors.white70, fontSize: 20),
                     ),
                   );
                 }
@@ -394,9 +388,7 @@ class UpcomingBox extends StatelessWidget {
                 return ListView.builder(
                   itemCount: reservations.length,
                   itemBuilder: (context, index) {
-                    return ReservationItem(
-                      reservation: reservations[index],
-                    );
+                    return ReservationItem(reservation: reservations[index]);
                   },
                 );
               },
@@ -415,7 +407,10 @@ class UpcomingBox extends StatelessWidget {
     return FirebaseFirestore.instance
         .collection('Reservations')
         .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
-        .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(fourHoursLater))
+        .where(
+          'startTime',
+          isLessThanOrEqualTo: Timestamp.fromDate(fourHoursLater),
+        )
         .orderBy('startTime', descending: false)
         .limit(15) // Increased limit for all reservations
         .snapshots();
@@ -427,8 +422,6 @@ class UpcomingBox extends StatelessWidget {
       return [];
     }
 
-    return snapshot.docs
-        .map((doc) => Reservation.fromFirestore(doc))
-        .toList();
+    return snapshot.docs.map((doc) => Reservation.fromFirestore(doc)).toList();
   }
 }

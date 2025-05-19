@@ -10,9 +10,7 @@ import 'Pages/DataUploaders/uploaderSelector.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     ChangeNotifierProvider(
       create: (_) => TableProvider(),
@@ -29,7 +27,7 @@ class NestTableApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(fontFamily: 'Kanit',),
+      theme: ThemeData(fontFamily: 'Kanit'),
       home: HomeScreen(),
     );
   }
@@ -39,10 +37,10 @@ class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  State<HomeScreen> createState() => HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
@@ -65,13 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       body: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TopBar(),
-              ),
-            ],
-          ),
+          Row(children: [Expanded(child: TopBar())]),
           Expanded(
             child: Row(
               children: [
@@ -79,9 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   selectedIndex: _selectedIndex,
                   onIconTapped: _onIconTapped,
                 ),
-                Expanded(
-                  child: _pages[_selectedIndex],
-                ),
+                Expanded(child: _pages[_selectedIndex]),
               ],
             ),
           ),
@@ -98,11 +88,7 @@ class TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.black,
-      child: Row(
-        children: [
-          SizedBox(height: 25),
-        ],
-      ),
+      child: Row(children: [SizedBox(height: 25)]),
     );
   }
 }
@@ -142,4 +128,3 @@ class Page6 extends StatelessWidget {
     return Scaffold(body: Center(child: Text("Page 6")));
   }
 }
-

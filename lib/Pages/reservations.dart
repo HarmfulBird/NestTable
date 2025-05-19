@@ -11,14 +11,15 @@ class Reservations extends StatefulWidget {
   const Reservations({super.key});
 
   @override
-  State<Reservations> createState() => _ReservationsState();
+  State<Reservations> createState() => ReservationsState();
 }
 
-class _ReservationsState extends State<Reservations> {
+class ReservationsState extends State<Reservations> {
   ReservationData? selectedReservation;
   List<ReservationData> reservations = [];
   DateTime currentDate = DateTime.now();
   bool showOverlay = false;
+  bool isEditing = false;
   TextEditingController firstNameController = TextEditingController();
   TextEditingController surnameController = TextEditingController();
   TextEditingController guestsController = TextEditingController();
@@ -26,6 +27,8 @@ class _ReservationsState extends State<Reservations> {
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedTable;
+  bool? tempSeated;
+  bool? tempFinished;
 
   @override
   void initState() {
@@ -53,7 +56,10 @@ class _ReservationsState extends State<Reservations> {
                 partySize: data['partySize'] ?? 0,
                 seated: data['seated'] ?? false,
                 isFinished: data['isFinished'] ?? false,
-                color: _getReservationColor(),
+                color: _getReservationColor(
+                  data['seated'] ?? false,
+                  data['isFinished'] ?? false,
+                ),
                 specialNotes: data['specialNotes'] ?? '',
               ),
             );
@@ -66,14 +72,14 @@ class _ReservationsState extends State<Reservations> {
         });
   }
 
-  Color _getReservationColor() {
-    final colors = [
-      Colors.purple.shade400,
-      Colors.cyan.shade400,
-      Colors.green.shade400,
-      Colors.blue.shade400,
-    ];
-    return colors[DateTime.now().microsecond % colors.length];
+  Color _getReservationColor(bool isSeated, bool isFinished) {
+    if (isFinished) {
+      return Colors.grey.shade700;
+    } else if (isSeated) {
+      return Colors.green.shade400;
+    } else {
+      return Colors.orange.shade400;
+    }
   }
 
   void _previousDay() {
@@ -108,13 +114,99 @@ class _ReservationsState extends State<Reservations> {
     }
   }
 
+  void _showDeleteConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'Delete Reservation',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Are you sure you want to delete this reservation?',
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                _deleteReservation();
+              },
+              child: Text(
+                'Delete',
+                style: TextStyle(color: Colors.red.shade400),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editReservation() {
+    if (selectedReservation == null) return;
+
+    final names = selectedReservation!.customerName.split(' ');
+    final firstName = names.first;
+    final surname = names.length > 1 ? names.sublist(1).join(' ') : '';
+    setState(() {
+      isEditing = true;
+      showOverlay = true;
+      firstNameController.text = firstName;
+      surnameController.text = surname;
+      guestsController.text = selectedReservation!.partySize.toString();
+      specialNotesController.text = selectedReservation!.specialNotes;
+      selectedDate = selectedReservation!.startTime;
+      selectedTime = TimeOfDay(
+        hour: selectedReservation!.startTime.hour,
+        minute: selectedReservation!.startTime.minute,
+      );
+      selectedTable = selectedReservation!.tableNumber.toString();
+      tempSeated = selectedReservation!.seated;
+      tempFinished = selectedReservation!.isFinished;
+    });
+  }
+
+  Future<void> _deleteReservation() async {
+    if (selectedReservation == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('Reservations')
+          .doc('reservation_${selectedReservation!.id}')
+          .delete();
+
+      setState(() {
+        selectedReservation = null;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error deleting reservation: $e');
+      }
+    }
+  }
+
   Future<void> _saveReservation() async {
     if (selectedDate == null || selectedTime == null || selectedTable == null) {
       return;
     }
 
     try {
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final timestamp =
+          isEditing
+              ? selectedReservation!.id
+              : DateTime.now().millisecondsSinceEpoch;
       final startDateTime = DateTime(
         selectedDate!.year,
         selectedDate!.month,
@@ -122,9 +214,7 @@ class _ReservationsState extends State<Reservations> {
         selectedTime!.hour,
         selectedTime!.minute,
       );
-      final endDateTime = startDateTime.add(
-        const Duration(hours: 2),
-      ); // Default 2-hour duration
+      final endDateTime = startDateTime.add(const Duration(hours: 2));
 
       await FirebaseFirestore.instance
           .collection('Reservations')
@@ -137,13 +227,14 @@ class _ReservationsState extends State<Reservations> {
             'startTime': Timestamp.fromDate(startDateTime),
             'endTime': Timestamp.fromDate(endDateTime),
             'partySize': int.parse(guestsController.text),
-            'seated': false,
-            'isFinished': false,
+            'seated': isEditing ? (tempSeated ?? false) : false,
+            'isFinished': isEditing ? (tempFinished ?? false) : false,
             'specialNotes': specialNotesController.text,
           });
 
       setState(() {
         showOverlay = false;
+        isEditing = false;
         firstNameController.clear();
         surnameController.clear();
         guestsController.clear();
@@ -153,11 +244,123 @@ class _ReservationsState extends State<Reservations> {
         selectedTable = null;
       });
     } catch (e) {
-      // You might want to show an error message to the user here
       if (kDebugMode) {
         print('Error saving reservation: $e');
       }
     }
+  }
+
+  void _showFinishConfirmation() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'Mark as Finished',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: const Text(
+            'Are you sure you want to mark this reservation as finished?',
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                _updateReservationStatus(isFinished: true);
+              },
+              child: const Text(
+                'Confirm',
+                style: TextStyle(color: Colors.green),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _updateReservationStatus({
+    bool? seated,
+    bool? isFinished,
+  }) async {
+    if (selectedReservation == null) return;
+
+    try {
+      final updates = <String, dynamic>{};
+      if (seated != null) updates['seated'] = seated;
+      if (isFinished != null) updates['isFinished'] = isFinished;
+
+      await FirebaseFirestore.instance
+          .collection('Reservations')
+          .doc('reservation_${selectedReservation!.id}')
+          .update(updates);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error updating reservation status: $e');
+      }
+    }
+  }
+
+  void _showStatusMenu(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'Revert Status',
+            style: TextStyle(color: Colors.white),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selectedReservation!.seated ||
+                  selectedReservation!.isFinished)
+                ListTile(
+                  leading: Icon(
+                    Icons.access_time,
+                    color: Colors.orange.shade400,
+                  ),
+                  title: const Text(
+                    'Back to Waiting',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _updateReservationStatus(seated: false, isFinished: false);
+                  },
+                ),
+              if (selectedReservation!.isFinished)
+                ListTile(
+                  leading: Icon(
+                    Icons.chair_outlined,
+                    color: Colors.green.shade400,
+                  ),
+                  title: const Text(
+                    'Back to Seated',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _updateReservationStatus(seated: true, isFinished: false);
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -238,9 +441,9 @@ class _ReservationsState extends State<Reservations> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'New Reservation',
-                            style: TextStyle(
+                          Text(
+                            isEditing ? 'Edit Reservation' : 'New Reservation',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 24,
                               fontWeight: FontWeight.bold,
@@ -248,18 +451,22 @@ class _ReservationsState extends State<Reservations> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.close, color: Colors.white),
-                            onPressed: () {
-                              setState(() {
-                                showOverlay = false;
-                                firstNameController.clear();
-                                surnameController.clear();
-                                guestsController.clear();
-                                specialNotesController.clear();
-                                selectedDate = null;
-                                selectedTime = null;
-                                selectedTable = null;
-                              });
-                            },
+                            onPressed:
+                                selectedReservation?.isFinished == true
+                                    ? null
+                                    : () {
+                                      setState(() {
+                                        showOverlay = false;
+                                        isEditing = false;
+                                        firstNameController.clear();
+                                        surnameController.clear();
+                                        guestsController.clear();
+                                        specialNotesController.clear();
+                                        selectedDate = null;
+                                        selectedTime = null;
+                                        selectedTable = null;
+                                      });
+                                    },
                           ),
                         ],
                       ),
@@ -388,6 +595,67 @@ class _ReservationsState extends State<Reservations> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      if (isEditing) ...[
+                        const Text(
+                          "Status",
+                          style: TextStyle(
+                            color: Colors.grey,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            ChoiceChip(
+                              label: const Text('Waiting'),
+                              selected:
+                                  !(tempSeated ?? false) &&
+                                  !(tempFinished ?? false),
+                              onSelected: (_) {
+                                setState(() {
+                                  tempSeated = false;
+                                  tempFinished = false;
+                                });
+                              },
+                              selectedColor: Colors.orange.shade400,
+                              backgroundColor: Color(0xFF3E3F41),
+                              labelStyle: TextStyle(color: Colors.white),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: const Text('Seated'),
+                              selected:
+                                  (tempSeated ?? false) &&
+                                  !(tempFinished ?? false),
+                              onSelected: (_) {
+                                setState(() {
+                                  tempSeated = true;
+                                  tempFinished = false;
+                                });
+                              },
+                              selectedColor: Colors.green.shade400,
+                              backgroundColor: Color(0xFF3E3F41),
+                              labelStyle: TextStyle(color: Colors.white),
+                            ),
+                            const SizedBox(width: 8),
+                            ChoiceChip(
+                              label: const Text('Finished'),
+                              selected: tempFinished ?? false,
+                              onSelected: (_) {
+                                setState(() {
+                                  tempSeated = true;
+                                  tempFinished = true;
+                                });
+                              },
+                              selectedColor: Colors.grey.shade700,
+                              backgroundColor: Color(0xFF3E3F41),
+                              labelStyle: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       DropdownButtonFormField<String>(
                         value: selectedTable,
                         dropdownColor: const Color(0xFF212224),
@@ -425,6 +693,7 @@ class _ReservationsState extends State<Reservations> {
                             onPressed: () {
                               setState(() {
                                 showOverlay = false;
+                                isEditing = false;
                                 firstNameController.clear();
                                 surnameController.clear();
                                 guestsController.clear();
@@ -432,6 +701,8 @@ class _ReservationsState extends State<Reservations> {
                                 selectedDate = null;
                                 selectedTime = null;
                                 selectedTable = null;
+                                tempSeated = null;
+                                tempFinished = null;
                               });
                             },
                             child: const Text(
@@ -453,10 +724,28 @@ class _ReservationsState extends State<Reservations> {
                               _saveReservation();
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
+                              backgroundColor:
+                                  isEditing
+                                      ? Colors
+                                          .blue
+                                          .shade400 // Blue for update
+                                      : Colors.white, // White for new
+                              foregroundColor:
+                                  isEditing
+                                      ? Colors
+                                          .white // White text for update
+                                      : Colors.black, // Black text for new
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
                             ),
-                            child: const Text('Add'),
+                            child: Text(
+                              isEditing ? 'Update' : 'Add',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -559,9 +848,12 @@ class _ReservationsState extends State<Reservations> {
                                         onPrimary: Colors.black,
                                         surface: Color(0xFF2F3031),
                                         onSurface: Colors.white,
-                                      ), dialogTheme: DialogThemeData(backgroundColor: const Color(
-                                        0xFF2F3031,
-                                      )),
+                                      ),
+                                      dialogTheme: DialogThemeData(
+                                        backgroundColor: const Color(
+                                          0xFF2F3031,
+                                        ),
+                                      ),
                                     ),
                                     child: child!,
                                   );
@@ -835,7 +1127,10 @@ class _ReservationsState extends State<Reservations> {
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 2),
               decoration: BoxDecoration(
-                color: reservation.color,
+                color: _getReservationColor(
+                  reservation.seated,
+                  reservation.isFinished,
+                ),
                 borderRadius: BorderRadius.circular(8),
                 border:
                     selectedReservation?.id == reservation.id
@@ -1028,43 +1323,7 @@ class _ReservationsState extends State<Reservations> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    selectedReservation!.seated == true
-                        ? Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red.shade400,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Seated',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        )
-                        : Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade400,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'Waiting',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
+                    _buildStatusIndicator(),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -1136,49 +1395,45 @@ class _ReservationsState extends State<Reservations> {
                 Row(
                   children: [
                     Expanded(
-                      child:
-                          selectedReservation!.seated == true
-                              ? ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF62CB99),
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Finished",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              )
-                              : ElevatedButton(
-                                onPressed: () {},
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.orange.shade400,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 8,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                child: Text(
-                                  "Seat",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
+                      child: ElevatedButton(
+                        onPressed:
+                            selectedReservation?.isFinished == true
+                                ? null
+                                : () {
+                                  if (!selectedReservation!.seated) {
+                                    _updateReservationStatus(
+                                      seated: true,
+                                      isFinished: false,
+                                    );
+                                  } else {
+                                    _showFinishConfirmation();
+                                  }
+                                },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              selectedReservation?.isFinished == true
+                                  ? Colors.grey.shade700
+                                  : selectedReservation!.seated
+                                  ? Colors.green.shade400
+                                  : Colors.orange.shade400,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          selectedReservation?.isFinished == true
+                              ? "Finished"
+                              : selectedReservation!.seated
+                              ? "Finish"
+                              : "Seat",
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     // Edit button
@@ -1188,9 +1443,28 @@ class _ReservationsState extends State<Reservations> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _editReservation();
+                        },
                         icon: const Icon(
                           Icons.edit_outlined,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Delete button
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF3E3F41),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: IconButton(
+                        onPressed: () {
+                          _showDeleteConfirmation();
+                        },
+                        icon: const Icon(
+                          Icons.delete_outline,
                           color: Colors.white,
                         ),
                       ),
@@ -1201,6 +1475,57 @@ class _ReservationsState extends State<Reservations> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator() {
+    Color statusColor =
+        selectedReservation!.isFinished
+            ? Colors.grey.shade700
+            : selectedReservation!.seated
+            ? Colors.green.shade400
+            : Colors.orange.shade400;
+
+    String statusText =
+        selectedReservation!.isFinished
+            ? 'Finished'
+            : selectedReservation!.seated
+            ? 'Seated'
+            : 'Waiting';
+    return MouseRegion(
+      cursor:
+          selectedReservation!.isFinished
+              ? SystemMouseCursors.basic
+              : SystemMouseCursors.click,
+      child: GestureDetector(
+        onSecondaryTap:
+            selectedReservation!.isFinished
+                ? null
+                : () => _showStatusMenu(context),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: statusColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                statusText,
+                style: TextStyle(
+                  color:
+                      selectedReservation!.isFinished
+                          ? Colors.grey.shade400
+                          : Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

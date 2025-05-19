@@ -10,9 +10,69 @@ import '../Components/tableviewdata.dart';
 class TableProvider extends ChangeNotifier {
   List<TableData> tables = [];
   bool isLoading = true;
+  List<Map<String, dynamic>> reservations = [];
 
   TableProvider() {
     _listenToTables();
+    _listenToReservations();
+  }
+
+  void _listenToReservations() {
+    FirebaseFirestore.instance.collection('Reservations').snapshots().listen((
+      snapshot,
+    ) {
+      reservations =
+          snapshot.docs
+              .map(
+                (doc) => {
+                  'tableNumber': doc.data()['tableNumber'],
+                  'startTime': (doc.data()['startTime'] as Timestamp).toDate(),
+                  'seated': doc.data()['seated'] ?? false,
+                },
+              )
+              .toList();
+      _updateTableStatuses();
+    });
+  }
+
+  void _updateTableStatuses() {
+    final now = DateTime.now();
+
+    for (var table in tables) {
+      // Find active reservations for this table
+      final tableReservations =
+          reservations
+              .where(
+                (res) =>
+                    res['tableNumber'] == table.tableNumber &&
+                    res['startTime'].difference(now).inHours.abs() <= 2,
+              )
+              .toList();
+
+      if (tableReservations.isEmpty) {
+        _updateTableStatus(table.tableNumber, 'Open', Colors.green);
+        continue;
+      }
+
+      // Check if any reservation is currently seated
+      final seatedReservation = tableReservations.any(
+        (res) => res['seated'] == true,
+      );
+      if (seatedReservation) {
+        _updateTableStatus(table.tableNumber, 'Seated', Colors.red);
+        continue;
+      }
+
+      // If there's a reservation within 2 hours but not seated
+      _updateTableStatus(table.tableNumber, 'Reserved', Colors.orange);
+    }
+  }
+
+  void _updateTableStatus(int tableNumber, String status, Color statusColor) {
+    FirebaseFirestore.instance
+        .collection('Tables')
+        .doc('table_$tableNumber')
+        .update({'status': status});
   }
 
   void _listenToTables() {
@@ -21,41 +81,42 @@ class TableProvider extends ChangeNotifier {
         .orderBy('tableNumber')
         .snapshots()
         .listen((snapshot) {
-      final List<TableData> updatedTables = [];
-      for (var doc in snapshot.docs) {
-        final data = doc.data();
+          final List<TableData> updatedTables = [];
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
 
-        Color statusColor;
-        switch (data['status']) {
-          case 'Open':
-            statusColor = Colors.green;
-            break;
-          case 'Seated':
-            statusColor = Colors.red;
-            break;
-          case 'Reserved':
-            statusColor = Colors.orange;
-            break;
-          default:
-            statusColor = Colors.grey;
-        }
+            Color statusColor;
+            switch (data['status']) {
+              case 'Open':
+                statusColor = Colors.green;
+                break;
+              case 'Seated':
+                statusColor = Colors.red;
+                break;
+              case 'Reserved':
+                statusColor = Colors.orange;
+                break;
+              default:
+                statusColor = Colors.grey;
+            }
 
-        updatedTables.add(
-          TableData(
-            tableNumber: data['tableNumber'],
-            capacity: data['capacity'],
-            assignedServer: data['assignedServer'] ?? '',
-            status: data['status'],
-            statusColor: statusColor,
-            currentGuests: data['currentGuests'] ?? 0,
-          ),
-        );
-      }
+            updatedTables.add(
+              TableData(
+                tableNumber: data['tableNumber'],
+                capacity: data['capacity'],
+                assignedServer: data['assignedServer'] ?? '',
+                status: data['status'],
+                statusColor: statusColor,
+                currentGuests: data['currentGuests'] ?? 0,
+              ),
+            );
+          }
 
-      tables = updatedTables;
-      isLoading = false;
-      notifyListeners();
-    });
+          tables = updatedTables;
+          isLoading = false;
+          _updateTableStatuses();
+          notifyListeners();
+        });
   }
 }
 
@@ -79,9 +140,10 @@ class _TableOverviewState extends State<TableOverview> {
     final isSmallScreen = size.width < 900;
 
     return Scaffold(
-      body: isSmallScreen
-          ? _buildMobileLayout(tableProvider)
-          : _buildDesktopLayout(tableProvider),
+      body:
+          isSmallScreen
+              ? _buildMobileLayout(tableProvider)
+              : _buildDesktopLayout(tableProvider),
     );
   }
 
@@ -101,9 +163,10 @@ class _TableOverviewState extends State<TableOverview> {
                     const DateTimeBox(),
                     const SizedBox(height: 20),
                     TableInfoBox(
-                      selectedTable: selectedTableIndex != null
-                          ? tableProvider.tables[selectedTableIndex!]
-                          : null,
+                      selectedTable:
+                          selectedTableIndex != null
+                              ? tableProvider.tables[selectedTableIndex!]
+                              : null,
                     ),
                     const SizedBox(height: 20),
                     UpcomingBox(selectedTable: null),
@@ -117,16 +180,20 @@ class _TableOverviewState extends State<TableOverview> {
                   color: const Color(0xFF212224),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
-                    child: tableProvider.isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : tableProvider.tables.isEmpty
-                        ? const Center(
-                        child: Text(
-                          'No tables found',
-                          style: TextStyle(
-                              color: Colors.white, fontSize: 20),
-                        ))
-                        : _buildTablesGrid(tableProvider),
+                    child:
+                        tableProvider.isLoading
+                            ? const Center(child: CircularProgressIndicator())
+                            : tableProvider.tables.isEmpty
+                            ? const Center(
+                              child: Text(
+                                'No tables found',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                ),
+                              ),
+                            )
+                            : _buildTablesGrid(tableProvider),
                   ),
                 ),
               ),
@@ -159,9 +226,10 @@ class _TableOverviewState extends State<TableOverview> {
                   const DateTimeBox(),
                   const SizedBox(height: 20),
                   TableInfoBox(
-                    selectedTable: selectedTableIndex != null
-                        ? tableProvider.tables[selectedTableIndex!]
-                        : null,
+                    selectedTable:
+                        selectedTableIndex != null
+                            ? tableProvider.tables[selectedTableIndex!]
+                            : null,
                   ),
                   const SizedBox(height: 20),
                   UpcomingBox(selectedTable: null),
@@ -177,15 +245,17 @@ class _TableOverviewState extends State<TableOverview> {
             color: const Color(0xFF212224),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
-              child: tableProvider.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : tableProvider.tables.isEmpty
-                  ? const Center(
-                  child: Text(
-                    'No tables found',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ))
-                  : _buildTablesGrid(tableProvider),
+              child:
+                  tableProvider.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : tableProvider.tables.isEmpty
+                      ? const Center(
+                        child: Text(
+                          'No tables found',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                      )
+                      : _buildTablesGrid(tableProvider),
             ),
           ),
         ),
@@ -222,15 +292,16 @@ class _TableOverviewState extends State<TableOverview> {
           childAspectRatio: childAspectRatio,
         ),
         itemCount: tableProvider.tables.length,
-        itemBuilder: (context, index) => TableCard(
-          tableData: tableProvider.tables[index],
-          isSelected: selectedTableIndex == index,
-          onTableSelected: () {
-            setState(() {
-              selectedTableIndex = index;
-            });
-          },
-        ),
+        itemBuilder:
+            (context, index) => TableCard(
+              tableData: tableProvider.tables[index],
+              isSelected: selectedTableIndex == index,
+              onTableSelected: () {
+                setState(() {
+                  selectedTableIndex = index;
+                });
+              },
+            ),
       ),
     );
   }
@@ -270,8 +341,9 @@ class TableCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFF2F3031),
           border: Border.all(
-              color: isSelected ? const Color(0xFF72D9FF) : Colors.transparent,
-              width: 3),
+            color: isSelected ? const Color(0xFF72D9FF) : Colors.transparent,
+            width: 3,
+          ),
           borderRadius: BorderRadius.circular(15),
         ),
         padding: EdgeInsets.all(isSmallScreen ? 12 : 20),
@@ -287,7 +359,11 @@ class TableCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTopRow(double tableFontSize, double baseFontSize, bool isSmallScreen) {
+  Widget _buildTopRow(
+    double tableFontSize,
+    double baseFontSize,
+    bool isSmallScreen,
+  ) {
     if (isSmallScreen) {
       // Stack layout for small screens
       return Column(
@@ -305,7 +381,10 @@ class TableCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 4,
+                  horizontal: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.grey,
                   borderRadius: BorderRadius.circular(10),
@@ -322,7 +401,10 @@ class TableCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 4,
+                    horizontal: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.deepPurple,
                     borderRadius: BorderRadius.circular(10),
@@ -356,10 +438,7 @@ class TableCard extends StatelessWidget {
           ),
           const Spacer(),
           Container(
-            padding: EdgeInsets.symmetric(
-                vertical: 5,
-                horizontal: 20
-            ),
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.grey,
               borderRadius: BorderRadius.circular(15),
@@ -375,10 +454,7 @@ class TableCard extends StatelessWidget {
           ),
           const SizedBox(width: 20),
           Container(
-            padding: EdgeInsets.symmetric(
-                vertical: 5,
-                horizontal: 20
-            ),
+            padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.deepPurple,
               borderRadius: BorderRadius.circular(15),
@@ -401,9 +477,10 @@ class TableCard extends StatelessWidget {
     final double statusWidth = isSmallScreen ? 110 : 135;
     final double statusHeight = isSmallScreen ? 40 : 53;
     final double borderRadius = isSmallScreen ? 10 : 15;
-    final EdgeInsets padding = isSmallScreen
-        ? const EdgeInsets.symmetric(vertical: 4, horizontal: 12)
-        : const EdgeInsets.symmetric(vertical: 5, horizontal: 20);
+    final EdgeInsets padding =
+        isSmallScreen
+            ? const EdgeInsets.symmetric(vertical: 4, horizontal: 12)
+            : const EdgeInsets.symmetric(vertical: 5, horizontal: 20);
 
     return Row(
       children: [
@@ -433,10 +510,10 @@ class TableCard extends StatelessWidget {
           children: [
             Container(
               padding: EdgeInsets.fromLTRB(
-                  isSmallScreen ? 12 : 15,
-                  isSmallScreen ? 4 : 5,
-                  isSmallScreen ? 40 : 64,
-                  isSmallScreen ? 4 : 5
+                isSmallScreen ? 12 : 15,
+                isSmallScreen ? 4 : 5,
+                isSmallScreen ? 40 : 64,
+                isSmallScreen ? 4 : 5,
               ),
               decoration: BoxDecoration(
                 color: const Color(0xFF676767),

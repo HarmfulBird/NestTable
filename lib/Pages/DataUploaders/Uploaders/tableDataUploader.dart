@@ -43,7 +43,8 @@ class _TableDataUploaderState extends State<TableDataUploader> {
 
   Future<void> _fetchStaffList() async {
     try {
-      final snapshot = await FirebaseFirestore.instance.collection('Staff').get();
+      final snapshot =
+          await FirebaseFirestore.instance.collection('Staff').get();
       final staffList = snapshot.docs.map((doc) => doc.data()).toList();
 
       setState(() {
@@ -60,10 +61,11 @@ class _TableDataUploaderState extends State<TableDataUploader> {
     });
 
     try {
-      final Tablesnapshot = await FirebaseFirestore.instance
-          .collection('Tables')
-          .orderBy('tableNumber')
-          .get();
+      final Tablesnapshot =
+          await FirebaseFirestore.instance
+              .collection('Tables')
+              .orderBy('tableNumber')
+              .get();
 
       final List<TableData> fetchedTables = [];
 
@@ -121,9 +123,9 @@ class _TableDataUploaderState extends State<TableDataUploader> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _saveTable() async {
@@ -170,12 +172,12 @@ class _TableDataUploaderState extends State<TableDataUploader> {
           .collection('Tables')
           .doc('table_$tableNumber')
           .set({
-        'tableNumber': tableNumber,
-        'capacity': capacity,
-        'assignedServer': assignedServer,
-        'status': status,
-        'currentGuests': currentGuests,
-      });
+            'tableNumber': tableNumber,
+            'capacity': capacity,
+            'assignedServer': assignedServer,
+            'status': status,
+            'currentGuests': currentGuests,
+          });
 
       if (_isEditing && _editingIndex >= 0 && _editingIndex < _Tables.length) {
         setState(() {
@@ -239,229 +241,371 @@ class _TableDataUploaderState extends State<TableDataUploader> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF212224),
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Table' : 'Add Table Data'),
+        title: Text(
+          _isEditing ? 'Edit Table' : 'Add Table Data',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF2F3031),
         actions: [
           if (_isEditing)
             IconButton(
-              icon: const Icon(Icons.cancel),
+              icon: const Icon(Icons.cancel, color: Colors.white),
               onPressed: _resetForm,
               tooltip: 'Cancel Editing',
             ),
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: Colors.white),
             onPressed: _fetchExistingTables,
             tooltip: 'Refresh Tables',
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isEditing ? 'Edit Table' : 'Add New Table',
-                          style: Theme.of(context).textTheme.headlineSmall,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _tableNumberController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Table Number',
-                                  border: OutlineInputBorder(),
-                                ),
-                                enabled: !_isEditing,
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter table number';
-                                  }
-                                  if (int.tryParse(value) == null) {
-                                    return 'Please enter a valid number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _capacityController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Capacity',
-                                  border: OutlineInputBorder(),
-                                ),
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter capacity';
-                                  }
-                                  if (int.tryParse(value) == null) {
-                                    return 'Please enter a valid number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          decoration: const InputDecoration(
-                            labelText: 'Assigned Server',
-                            border: OutlineInputBorder(),
-                          ),
-                          value: _selectedStaffInitials,
-                          items: _staffOptions.map((staff) {
-                            final fullName = '${staff['firstName']} ${staff['lastName']} (${staff['initials']})';
-                            return DropdownMenuItem<String>(
-                              value: staff['initials'],
-                              child: Text(fullName),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedStaffInitials = value;
-                            });
-                          },
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please select a server';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                decoration: const InputDecoration(
-                                  labelText: 'Status',
-                                  border: OutlineInputBorder(),
-                                ),
-                                value: _selectedStatus,
-                                items: _statusOptions
-                                    .map((status) => DropdownMenuItem(
-                                  value: status,
-                                  child: Text(status),
-                                ))
-                                    .toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    setState(() {
-                                      _selectedStatus = value;
-                                    });
-                                  }
-                                },
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _currentGuestsController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Current Guests',
-                                  border: OutlineInputBorder(),
-                                ),
-                                keyboardType: TextInputType.number,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter current guests';
-                                  }
-                                  if (int.tryParse(value) == null) {
-                                    return 'Please enter a valid number';
-                                  }
-                                  return null;
-                                },
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton(
-                          onPressed: _saveTable,
-                          style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                          ),
-                          child: Text(_isEditing ? 'Update Table' : 'Add Table'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Card(
+      body:
+          _isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.deepPurple),
+              )
+              : SingleChildScrollView(
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        'Current Tables',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 16),
-                      _Tables.isEmpty
-                          ? const Center(
+                      Card(
+                        color: const Color(0xFF2F3031),
                         child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text('No Tables yet. Add one above.'),
-                        ),
-                      )
-                          : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _Tables.length,
-                        itemBuilder: (context, index) {
-                          final table = _Tables[index];
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 8.0),
-                            child: ListTile(
-                              title: Text('Table ${table.tableNumber}'),
-                              subtitle: Text(
-                                  'Capacity: ${table.capacity} | Status: ${table.status} | Server: ${table.assignedServer} | Guests: ${table.currentGuests}'),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () => _editTable(table, index),
+                          padding: const EdgeInsets.all(16.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _isEditing ? 'Edit Table' : 'Add New Table',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () => _deleteTable(table.tableNumber),
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _tableNumberController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Table Number',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter table number';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _capacityController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Capacity',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter capacity';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    labelText: 'Assigned Server',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                    ),
                                   ),
-                                ],
-                              ),
+                                  dropdownColor: const Color(0xFF2F3031),
+                                  style: const TextStyle(color: Colors.white),
+                                  value: _selectedStaffInitials,
+                                  items:
+                                      _staffOptions.map((staff) {
+                                        final fullName =
+                                            '${staff['firstName']} ${staff['lastName']} (${staff['initials']})';
+                                        return DropdownMenuItem<String>(
+                                          value: staff['initials'],
+                                          child: Text(
+                                            fullName,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        );
+                                      }).toList(),
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _selectedStaffInitials = value;
+                                    });
+                                  },
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please select a server';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          labelText: 'Status',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        dropdownColor: const Color(0xFF2F3031),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        value: _selectedStatus,
+                                        items:
+                                            _statusOptions
+                                                .map(
+                                                  (status) => DropdownMenuItem(
+                                                    value: status,
+                                                    child: Text(
+                                                      status,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            setState(() {
+                                              _selectedStatus = value;
+                                            });
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _currentGuestsController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Current Guests',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter current guests';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _saveTable,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurple,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _isEditing ? 'Update Table' : 'Add Table',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                          );
-                        },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Card(
+                        color: const Color(0xFF2F3031),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Current Tables',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _Tables.isEmpty
+                                  ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'No tables yet. Add one above.',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
+                                  )
+                                  : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: _Tables.length,
+                                    itemBuilder: (context, index) {
+                                      final table = _Tables[index];
+                                      return Card(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 8.0,
+                                        ),
+                                        color: const Color(0xFF212224),
+                                        child: ListTile(
+                                          title: Text(
+                                            'Table ${table.tableNumber}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Text(
+                                            'Capacity: ${table.capacity} | Status: ${table.status} | Server: ${table.assignedServer} | Guests: ${table.currentGuests}',
+                                            style: TextStyle(
+                                              color: Colors.grey.shade400,
+                                            ),
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.edit,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () => _editTable(
+                                                      table,
+                                                      index,
+                                                    ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () => _deleteTable(
+                                                      table.tableNumber,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
