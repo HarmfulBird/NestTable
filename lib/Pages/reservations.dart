@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:nesttable/custom_icons_icons.dart';
 import 'dart:math';
 import '../Components/datetime.dart';
-import '../Components/reservationdata.dart';
+import '../Components/reservation_data.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -38,38 +38,38 @@ class ReservationsState extends State<Reservations> {
 
   void _listenToReservations() {
     FirebaseFirestore.instance
-        .collection('Reservations')
-        .orderBy('startTime')
-        .snapshots()
-        .listen((snapshot) {
-          final List<ReservationData> updatedReservations = [];
+      .collection('Reservations')
+      .orderBy('startTime')
+      .snapshots()
+      .listen((snapshot) {
+        final List<ReservationData> updatedReservations = [];
 
-          for (var doc in snapshot.docs) {
-            final data = doc.data();
-            updatedReservations.add(
-              ReservationData(
-                id: data['id'],
-                customerName: data['customerName'] ?? '',
-                tableNumber: data['tableNumber'] ?? 0,
-                startTime: (data['startTime'] as Timestamp).toDate(),
-                endTime: (data['endTime'] as Timestamp).toDate(),
-                partySize: data['partySize'] ?? 0,
-                seated: data['seated'] ?? false,
-                isFinished: data['isFinished'] ?? false,
-                color: _getReservationColor(
-                  data['seated'] ?? false,
-                  data['isFinished'] ?? false,
-                ),
-                specialNotes: data['specialNotes'] ?? '',
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
+          updatedReservations.add(
+            ReservationData(
+              id: data['id'],
+              customerName: data['customerName'] ?? '',
+              tableNumber: data['tableNumber'] ?? 0,
+              startTime: (data['startTime'] as Timestamp).toDate(),
+              endTime: (data['endTime'] as Timestamp).toDate(),
+              partySize: data['partySize'] ?? 0,
+              seated: data['seated'] ?? false,
+              isFinished: data['isFinished'] ?? false,
+              color: _getReservationColor(
+                data['seated'] ?? false,
+                data['isFinished'] ?? false,
               ),
-            );
-          }
+              specialNotes: data['specialNotes'] ?? '',
+            ),
+          );
+        }
 
-          setState(() {
-            reservations = updatedReservations;
-            _updateSelectedReservation();
-          });
+        setState(() {
+          reservations = updatedReservations;
+          _updateSelectedReservation();
         });
+      });
   }
 
   Color _getReservationColor(bool isSeated, bool isFinished) {
@@ -98,14 +98,14 @@ class ReservationsState extends State<Reservations> {
 
   void _updateSelectedReservation() {
     final currentDayReservations =
-        reservations
-            .where(
-              (res) =>
-                  res.startTime.year == currentDate.year &&
-                  res.startTime.month == currentDate.month &&
-                  res.startTime.day == currentDate.day,
-            )
-            .toList();
+      reservations
+        .where(
+          (res) =>
+            res.startTime.year == currentDate.year &&
+            res.startTime.month == currentDate.month &&
+            res.startTime.day == currentDate.day,
+        )
+        .toList();
 
     if (currentDayReservations.isNotEmpty) {
       selectedReservation = currentDayReservations.first;
@@ -131,7 +131,7 @@ class ReservationsState extends State<Reservations> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
               },
               child: const Text(
                 'Cancel',
@@ -140,7 +140,7 @@ class ReservationsState extends State<Reservations> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
                 _deleteReservation();
               },
               child: Text(
@@ -183,9 +183,9 @@ class ReservationsState extends State<Reservations> {
 
     try {
       await FirebaseFirestore.instance
-          .collection('Reservations')
-          .doc('reservation_${selectedReservation!.id}')
-          .delete();
+        .collection('Reservations')
+        .doc('reservation_${selectedReservation!.id}')
+        .delete();
 
       setState(() {
         selectedReservation = null;
@@ -204,9 +204,9 @@ class ReservationsState extends State<Reservations> {
 
     try {
       final timestamp =
-          isEditing
-              ? selectedReservation!.id
-              : DateTime.now().millisecondsSinceEpoch;
+        isEditing
+          ? selectedReservation!.id
+          : DateTime.now().millisecondsSinceEpoch;
       final startDateTime = DateTime(
         selectedDate!.year,
         selectedDate!.month,
@@ -217,20 +217,19 @@ class ReservationsState extends State<Reservations> {
       final endDateTime = startDateTime.add(const Duration(hours: 2));
 
       await FirebaseFirestore.instance
-          .collection('Reservations')
-          .doc('reservation_$timestamp')
-          .set({
-            'id': timestamp,
-            'customerName':
-                '${firstNameController.text} ${surnameController.text}'.trim(),
-            'tableNumber': int.parse(selectedTable!),
-            'startTime': Timestamp.fromDate(startDateTime),
-            'endTime': Timestamp.fromDate(endDateTime),
-            'partySize': int.parse(guestsController.text),
-            'seated': isEditing ? (tempSeated ?? false) : false,
-            'isFinished': isEditing ? (tempFinished ?? false) : false,
-            'specialNotes': specialNotesController.text,
-          });
+        .collection('Reservations')
+        .doc('reservation_$timestamp')
+        .set({
+          'id': timestamp,
+          'customerName': '${firstNameController.text} ${surnameController.text}'.trim(),
+          'tableNumber': int.parse(selectedTable!),
+          'startTime': Timestamp.fromDate(startDateTime),
+          'endTime': Timestamp.fromDate(endDateTime),
+          'partySize': int.parse(guestsController.text),
+          'seated': isEditing ? (tempSeated ?? false) : false,
+          'isFinished': isEditing ? (tempFinished ?? false) : false,
+          'specialNotes': specialNotesController.text,
+        });
 
       setState(() {
         showOverlay = false;
@@ -267,7 +266,7 @@ class ReservationsState extends State<Reservations> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
               },
               child: const Text(
                 'Cancel',
@@ -276,7 +275,7 @@ class ReservationsState extends State<Reservations> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
                 _updateReservationStatus(isFinished: true);
               },
               child: const Text(
@@ -302,9 +301,9 @@ class ReservationsState extends State<Reservations> {
       if (isFinished != null) updates['isFinished'] = isFinished;
 
       await FirebaseFirestore.instance
-          .collection('Reservations')
-          .doc('reservation_${selectedReservation!.id}')
-          .update(updates);
+        .collection('Reservations')
+        .doc('reservation_${selectedReservation!.id}')
+        .update(updates);
     } catch (e) {
       if (kDebugMode) {
         print('Error updating reservation status: $e');
@@ -452,21 +451,21 @@ class ReservationsState extends State<Reservations> {
                           IconButton(
                             icon: const Icon(Icons.close, color: Colors.white),
                             onPressed:
-                                selectedReservation?.isFinished == true
-                                    ? null
-                                    : () {
-                                      setState(() {
-                                        showOverlay = false;
-                                        isEditing = false;
-                                        firstNameController.clear();
-                                        surnameController.clear();
-                                        guestsController.clear();
-                                        specialNotesController.clear();
-                                        selectedDate = null;
-                                        selectedTime = null;
-                                        selectedTable = null;
-                                      });
-                                    },
+                              selectedReservation?.isFinished == true
+                                ? null
+                                : () {
+                                  setState(() {
+                                    showOverlay = false;
+                                    isEditing = false;
+                                    firstNameController.clear();
+                                    surnameController.clear();
+                                    guestsController.clear();
+                                    specialNotesController.clear();
+                                    selectedDate = null;
+                                    selectedTime = null;
+                                    selectedTable = null;
+                                  });
+                                },
                           ),
                         ],
                       ),
@@ -526,10 +525,10 @@ class ReservationsState extends State<Reservations> {
                               ),
                               child: Text(
                                 selectedDate != null
-                                    ? DateFormat(
-                                      'dd/MM/yyyy',
-                                    ).format(selectedDate!)
-                                    : 'Select Date',
+                                  ? DateFormat(
+                                    'dd/MM/yyyy',
+                                  ).format(selectedDate!)
+                                  : 'Select Date',
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ),
@@ -554,8 +553,8 @@ class ReservationsState extends State<Reservations> {
                               ),
                               child: Text(
                                 selectedTime != null
-                                    ? selectedTime!.format(context)
-                                    : 'Select Time',
+                                  ? selectedTime!.format(context)
+                                  : 'Select Time',
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ),
@@ -610,8 +609,8 @@ class ReservationsState extends State<Reservations> {
                             ChoiceChip(
                               label: const Text('Waiting'),
                               selected:
-                                  !(tempSeated ?? false) &&
-                                  !(tempFinished ?? false),
+                                !(tempSeated ?? false) &&
+                                !(tempFinished ?? false),
                               onSelected: (_) {
                                 setState(() {
                                   tempSeated = false;
@@ -725,16 +724,16 @@ class ReservationsState extends State<Reservations> {
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
-                                  isEditing
-                                      ? Colors
-                                          .blue
-                                          .shade400 // Blue for update
-                                      : Colors.white, // White for new
+                                isEditing
+                                  ? Colors
+                                    .blue
+                                    .shade400
+                                  : Colors.white,
                               foregroundColor:
-                                  isEditing
-                                      ? Colors
-                                          .white // White text for update
-                                      : Colors.black, // Black text for new
+                                isEditing
+                                  ? Colors
+                                    .white
+                                  : Colors.black,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 12,
@@ -1076,20 +1075,19 @@ class ReservationsState extends State<Reservations> {
   ) {
     List<Widget> reservationWidgets = [];
     final tableReservations =
-        reservations
-            .where(
-              (res) =>
-                  res.tableNumber == tableNumber &&
-                  res.startTime.year == currentDate.year &&
-                  res.startTime.month == currentDate.month &&
-                  res.startTime.day == currentDate.day,
-            )
-            .toList();
+      reservations
+        .where(
+          (res) =>
+            res.tableNumber == tableNumber &&
+            res.startTime.year == currentDate.year &&
+            res.startTime.month == currentDate.month &&
+            res.startTime.day == currentDate.day,
+        )
+        .toList();
 
     final double timelineStart = 12.75;
     final double pixelsPerHour = timeSlotWidth;
 
-    // Draw time grid lines
     for (double hour = 13; hour <= 21; hour++) {
       final double gridLeft = ((hour - timelineStart) * pixelsPerHour);
       reservationWidgets.add(
@@ -1102,7 +1100,6 @@ class ReservationsState extends State<Reservations> {
       );
     }
 
-    // Draw reservations
     for (var reservation in tableReservations) {
       final double startHour =
           reservation.startTime.hour + reservation.startTime.minute / 60.0;
@@ -1133,9 +1130,9 @@ class ReservationsState extends State<Reservations> {
                 ),
                 borderRadius: BorderRadius.circular(8),
                 border:
-                    selectedReservation?.id == reservation.id
-                        ? Border.all(color: Colors.white, width: 2)
-                        : null,
+                  selectedReservation?.id == reservation.id
+                    ? Border.all(color: Colors.white, width: 2)
+                    : null,
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1397,25 +1394,25 @@ class ReservationsState extends State<Reservations> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed:
-                            selectedReservation?.isFinished == true
-                                ? null
-                                : () {
-                                  if (!selectedReservation!.seated) {
-                                    _updateReservationStatus(
-                                      seated: true,
-                                      isFinished: false,
-                                    );
-                                  } else {
-                                    _showFinishConfirmation();
-                                  }
-                                },
+                          selectedReservation?.isFinished == true
+                            ? null
+                            : () {
+                              if (!selectedReservation!.seated) {
+                                _updateReservationStatus(
+                                  seated: true,
+                                  isFinished: false,
+                                );
+                              } else {
+                                _showFinishConfirmation();
+                              }
+                            },
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
-                              selectedReservation?.isFinished == true
-                                  ? Colors.grey.shade700
-                                  : selectedReservation!.seated
-                                  ? Colors.green.shade400
-                                  : Colors.orange.shade400,
+                            selectedReservation?.isFinished == true
+                              ? Colors.grey.shade700
+                              : selectedReservation!.seated
+                              ? Colors.green.shade400
+                              : Colors.orange.shade400,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
@@ -1423,10 +1420,10 @@ class ReservationsState extends State<Reservations> {
                         ),
                         child: Text(
                           selectedReservation?.isFinished == true
-                              ? "Finished"
-                              : selectedReservation!.seated
-                              ? "Finish"
-                              : "Seat",
+                            ? "Finished"
+                            : selectedReservation!.seated
+                            ? "Finish"
+                            : "Seat",
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -1481,28 +1478,28 @@ class ReservationsState extends State<Reservations> {
 
   Widget _buildStatusIndicator() {
     Color statusColor =
-        selectedReservation!.isFinished
-            ? Colors.grey.shade700
-            : selectedReservation!.seated
-            ? Colors.green.shade400
-            : Colors.orange.shade400;
+      selectedReservation!.isFinished
+        ? Colors.grey.shade700
+        : selectedReservation!.seated
+        ? Colors.green.shade400
+        : Colors.orange.shade400;
 
     String statusText =
-        selectedReservation!.isFinished
-            ? 'Finished'
-            : selectedReservation!.seated
-            ? 'Seated'
-            : 'Waiting';
+      selectedReservation!.isFinished
+        ? 'Finished'
+        : selectedReservation!.seated
+        ? 'Seated'
+        : 'Waiting';
     return MouseRegion(
       cursor:
-          selectedReservation!.isFinished
-              ? SystemMouseCursors.basic
-              : SystemMouseCursors.click,
+        selectedReservation!.isFinished
+          ? SystemMouseCursors.basic
+          : SystemMouseCursors.click,
       child: GestureDetector(
         onSecondaryTap:
-            selectedReservation!.isFinished
-                ? null
-                : () => _showStatusMenu(context),
+          selectedReservation!.isFinished
+            ? null
+            : () => _showStatusMenu(context),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           decoration: BoxDecoration(
@@ -1516,9 +1513,9 @@ class ReservationsState extends State<Reservations> {
                 statusText,
                 style: TextStyle(
                   color:
-                      selectedReservation!.isFinished
-                          ? Colors.grey.shade400
-                          : Colors.white,
+                    selectedReservation!.isFinished
+                      ? Colors.grey.shade400
+                      : Colors.white,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),

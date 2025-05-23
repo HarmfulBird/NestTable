@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import '../Components/datetime.dart';
-import '../Components/tableviewdata.dart';
+import '../Components/tableview_data.dart';
 
-// ------------------------------
-// Provider Class for Table Data
-// ------------------------------
 class TableProvider extends ChangeNotifier {
   List<TableData> tables = [];
   bool isLoading = true;
@@ -22,15 +19,15 @@ class TableProvider extends ChangeNotifier {
       snapshot,
     ) {
       reservations =
-          snapshot.docs
-              .map(
-                (doc) => {
-                  'tableNumber': doc.data()['tableNumber'],
-                  'startTime': (doc.data()['startTime'] as Timestamp).toDate(),
-                  'seated': doc.data()['seated'] ?? false,
-                },
-              )
-              .toList();
+        snapshot.docs
+          .map(
+            (doc) => {
+              'tableNumber': doc.data()['tableNumber'],
+              'startTime': (doc.data()['startTime'] as Timestamp).toDate(),
+              'seated': doc.data()['seated'] ?? false,
+            },
+          )
+          .toList();
       _updateTableStatuses();
     });
   }
@@ -39,22 +36,20 @@ class TableProvider extends ChangeNotifier {
     final now = DateTime.now();
 
     for (var table in tables) {
-      // Find active reservations for this table
       final tableReservations =
-          reservations
-              .where(
-                (res) =>
-                    res['tableNumber'] == table.tableNumber &&
-                    res['startTime'].difference(now).inHours.abs() <= 2,
-              )
-              .toList();
+        reservations
+          .where(
+            (res) =>
+              res['tableNumber'] == table.tableNumber &&
+              res['startTime'].difference(now).inHours.abs() <= 2,
+          )
+          .toList();
 
       if (tableReservations.isEmpty) {
         _updateTableStatus(table.tableNumber, 'Open', Colors.green);
         continue;
       }
 
-      // Check if any reservation is currently seated
       final seatedReservation = tableReservations.any(
         (res) => res['seated'] == true,
       );
@@ -63,74 +58,70 @@ class TableProvider extends ChangeNotifier {
         continue;
       }
 
-      // If there's a reservation within 2 hours but not seated
       _updateTableStatus(table.tableNumber, 'Reserved', Colors.orange);
     }
   }
 
   void _updateTableStatus(int tableNumber, String status, Color statusColor) {
     FirebaseFirestore.instance
-        .collection('Tables')
-        .doc('table_$tableNumber')
-        .update({'status': status});
+      .collection('Tables')
+      .doc('table_$tableNumber')
+      .update({'status': status});
   }
 
   void _listenToTables() {
     FirebaseFirestore.instance
-        .collection('Tables')
-        .orderBy('tableNumber')
-        .snapshots()
-        .listen((snapshot) {
-          final List<TableData> updatedTables = [];
-          for (var doc in snapshot.docs) {
-            final data = doc.data();
+      .collection('Tables')
+      .orderBy('tableNumber')
+      .snapshots()
+      .listen((snapshot) {
+        final List<TableData> updatedTables = [];
+        for (var doc in snapshot.docs) {
+          final data = doc.data();
 
-            Color statusColor;
-            switch (data['status']) {
-              case 'Open':
-                statusColor = Colors.green;
-                break;
-              case 'Seated':
-                statusColor = Colors.red;
-                break;
-              case 'Reserved':
-                statusColor = Colors.orange;
-                break;
-              default:
-                statusColor = Colors.grey;
-            }
-
-            updatedTables.add(
-              TableData(
-                tableNumber: data['tableNumber'],
-                capacity: data['capacity'],
-                assignedServer: data['assignedServer'] ?? '',
-                status: data['status'],
-                statusColor: statusColor,
-                currentGuests: data['currentGuests'] ?? 0,
-              ),
-            );
+          Color statusColor;
+          switch (data['status']) {
+            case 'Open':
+              statusColor = Colors.green;
+              break;
+            case 'Seated':
+              statusColor = Colors.red;
+              break;
+            case 'Reserved':
+              statusColor = Colors.orange;
+              break;
+            default:
+              statusColor = Colors.grey;
           }
 
-          tables = updatedTables;
-          isLoading = false;
-          _updateTableStatuses();
-          notifyListeners();
-        });
+          updatedTables.add(
+            TableData(
+              tableNumber: data['tableNumber'],
+              capacity: data['capacity'],
+              assignedServer: data['assignedServer'] ?? '',
+              status: data['status'],
+              statusColor: statusColor,
+              currentGuests: data['currentGuests'] ?? 0,
+            ),
+          );
+        }
+
+        tables = updatedTables;
+        isLoading = false;
+        _updateTableStatuses();
+        notifyListeners();
+      });
   }
 }
 
-// ------------------------------
-// Main TableOverview Widget
-// ------------------------------
 class TableOverview extends StatefulWidget {
   const TableOverview({super.key});
 
   @override
-  _TableOverviewState createState() => _TableOverviewState();
+  TableOverviewState createState() => TableOverviewState();
 }
 
-class _TableOverviewState extends State<TableOverview> {
+class TableOverviewState extends State<TableOverview> {
   int? selectedTableIndex;
 
   @override
@@ -141,9 +132,9 @@ class _TableOverviewState extends State<TableOverview> {
 
     return Scaffold(
       body:
-          isSmallScreen
-              ? _buildMobileLayout(tableProvider)
-              : _buildDesktopLayout(tableProvider),
+        isSmallScreen
+          ? _buildMobileLayout(tableProvider)
+          : _buildDesktopLayout(tableProvider),
     );
   }
 
@@ -164,9 +155,9 @@ class _TableOverviewState extends State<TableOverview> {
                     const SizedBox(height: 20),
                     TableInfoBox(
                       selectedTable:
-                          selectedTableIndex != null
-                              ? tableProvider.tables[selectedTableIndex!]
-                              : null,
+                        selectedTableIndex != null
+                          ? tableProvider.tables[selectedTableIndex!]
+                          : null,
                     ),
                     const SizedBox(height: 20),
                     UpcomingBox(selectedTable: null),
@@ -174,26 +165,25 @@ class _TableOverviewState extends State<TableOverview> {
                 ),
               ),
 
-              // ---- Right Hand Area ----
               Expanded(
                 child: Container(
                   color: const Color(0xFF212224),
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
                     child:
-                        tableProvider.isLoading
-                            ? const Center(child: CircularProgressIndicator())
-                            : tableProvider.tables.isEmpty
-                            ? const Center(
-                              child: Text(
-                                'No tables found',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                ),
-                              ),
-                            )
-                            : _buildTablesGrid(tableProvider),
+                      tableProvider.isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : tableProvider.tables.isEmpty
+                        ? const Center(
+                          child: Text(
+                            'No tables found',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                            ),
+                          ),
+                        )
+                        : _buildTablesGrid(tableProvider),
                   ),
                 ),
               ),
@@ -207,7 +197,6 @@ class _TableOverviewState extends State<TableOverview> {
   Widget _buildMobileLayout(TableProvider tableProvider) {
     return Column(
       children: [
-        // Summary area (collapsible)
         ExpansionTile(
           title: const Text(
             'Table Information',
@@ -227,9 +216,9 @@ class _TableOverviewState extends State<TableOverview> {
                   const SizedBox(height: 20),
                   TableInfoBox(
                     selectedTable:
-                        selectedTableIndex != null
-                            ? tableProvider.tables[selectedTableIndex!]
-                            : null,
+                      selectedTableIndex != null
+                        ? tableProvider.tables[selectedTableIndex!]
+                        : null,
                   ),
                   const SizedBox(height: 20),
                   UpcomingBox(selectedTable: null),
@@ -239,23 +228,22 @@ class _TableOverviewState extends State<TableOverview> {
           ],
         ),
 
-        // Tables grid (fills remaining space)
         Expanded(
           child: Container(
             color: const Color(0xFF212224),
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child:
-                  tableProvider.isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : tableProvider.tables.isEmpty
-                      ? const Center(
-                        child: Text(
-                          'No tables found',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                      )
-                      : _buildTablesGrid(tableProvider),
+                tableProvider.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : tableProvider.tables.isEmpty
+                  ? const Center(
+                    child: Text(
+                      'No tables found',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  )
+                  : _buildTablesGrid(tableProvider),
             ),
           ),
         ),
@@ -266,8 +254,7 @@ class _TableOverviewState extends State<TableOverview> {
   Widget _buildTablesGrid(TableProvider tableProvider) {
     final width = MediaQuery.of(context).size.width;
 
-    // Responsive grid - adjust crossAxisCount based on screen width
-    int crossAxisCount = 1; // Default for very small screens
+    int crossAxisCount = 1;
     double childAspectRatio = 3 / 2;
 
     if (width > 1400) {
@@ -293,23 +280,20 @@ class _TableOverviewState extends State<TableOverview> {
         ),
         itemCount: tableProvider.tables.length,
         itemBuilder:
-            (context, index) => TableCard(
-              tableData: tableProvider.tables[index],
-              isSelected: selectedTableIndex == index,
-              onTableSelected: () {
-                setState(() {
-                  selectedTableIndex = index;
-                });
-              },
-            ),
+          (context, index) => TableCard(
+            tableData: tableProvider.tables[index],
+            isSelected: selectedTableIndex == index,
+            onTableSelected: () {
+              setState(() {
+                selectedTableIndex = index;
+              });
+            },
+          ),
       ),
     );
   }
 }
 
-// ------------------------------
-// Responsive TableCard Widget
-// ------------------------------
 class TableCard extends StatelessWidget {
   final TableData tableData;
   final bool isSelected;
@@ -324,12 +308,10 @@ class TableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width to make responsive adjustments
     final width = MediaQuery.of(context).size.width;
     final isSmallScreen = width < 600;
     final isMediumScreen = width >= 600 && width < 900;
 
-    // Responsive font size
     final tableFontSize = isSmallScreen ? 24.0 : 40.0;
     final baseFontSize = isSmallScreen ? 16.0 : (isMediumScreen ? 22.0 : 30.0);
 
@@ -365,7 +347,6 @@ class TableCard extends StatelessWidget {
     bool isSmallScreen,
   ) {
     if (isSmallScreen) {
-      // Stack layout for small screens
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -425,7 +406,6 @@ class TableCard extends StatelessWidget {
         ],
       );
     } else {
-      // Original row layout for larger screens
       return Row(
         children: [
           Text(
@@ -478,9 +458,9 @@ class TableCard extends StatelessWidget {
     final double statusHeight = isSmallScreen ? 40 : 53;
     final double borderRadius = isSmallScreen ? 10 : 15;
     final EdgeInsets padding =
-        isSmallScreen
-            ? const EdgeInsets.symmetric(vertical: 4, horizontal: 12)
-            : const EdgeInsets.symmetric(vertical: 5, horizontal: 20);
+      isSmallScreen
+        ? const EdgeInsets.symmetric(vertical: 4, horizontal: 12)
+        : const EdgeInsets.symmetric(vertical: 5, horizontal: 20);
 
     return Row(
       children: [

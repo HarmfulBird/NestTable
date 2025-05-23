@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-// Model class to represent table data
 class TableData {
   final int tableNumber;
   final int capacity;
@@ -21,7 +20,6 @@ class TableData {
   });
 }
 
-// Model class for reservations
 class Reservation {
   final String id;
   final DateTime startTime;
@@ -71,149 +69,149 @@ class TableInfoBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child:
-          selectedTable != null
-              ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        selectedTable != null
+          ? Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Text(
-                        'Table ${selectedTable!.tableNumber}',
-                        style: const TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 5,
-                          horizontal: 20,
-                        ),
-                        width: 135,
-                        height: 53,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: selectedTable!.statusColor,
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            selectedTable!.status,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 30,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'Table ${selectedTable!.tableNumber}',
+                    style: const TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
-
-                  const SizedBox(height: 15),
-
-                  Row(
-                    children: [
-                      Text(
-                        'Capacity: ',
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 5,
+                      horizontal: 20,
+                    ),
+                    width: 135,
+                    height: 53,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: selectedTable!.statusColor,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        selectedTable!.status,
                         style: const TextStyle(
                           color: Colors.white,
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          fontSize: 24,
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 3,
-                          horizontal: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(int.parse('0xFF454545')),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          selectedTable!.capacity.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      const Text(
-                        'Server: ',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 24,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 3,
-                          horizontal: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.deepPurple,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          selectedTable!.assignedServer,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 24,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-
-                  const SizedBox(height: 30),
-
-                  Row(
-                    children: [
-                      Text(
-                        'Guests Seated: ',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 28,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 2,
-                          horizontal: 15,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(int.parse('0xFF454545')),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          selectedTable!.currentGuests.toString(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 28,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
                 ],
-              )
-              : const Text(
-                'No Table Selected',
-                style: TextStyle(color: Colors.white70, fontSize: 26),
               ),
+
+              const SizedBox(height: 15),
+
+              Row(
+                children: [
+                  Text(
+                    'Capacity: ',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 3,
+                      horizontal: 15,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse('0xFF454545')),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedTable!.capacity.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 20),
+
+                  const Text(
+                    'Server: ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 24,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 3,
+                      horizontal: 15,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedTable!.assignedServer,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 30),
+
+              Row(
+                children: [
+                  Text(
+                    'Guests Seated: ',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 28,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 2,
+                      horizontal: 15,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Color(int.parse('0xFF454545')),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      selectedTable!.currentGuests.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 28,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          )
+          : const Text(
+            'No Table Selected',
+            style: TextStyle(color: Colors.white70, fontSize: 26),
+          ),
     );
   }
 }
@@ -221,8 +219,7 @@ class TableInfoBox extends StatelessWidget {
 class ReservationItem extends StatelessWidget {
   final Reservation reservation;
 
-  const ReservationItem({required this.reservation, Key? key})
-    : super(key: key);
+  const ReservationItem({required this.reservation, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -323,7 +320,6 @@ class ReservationItem extends StatelessWidget {
 }
 
 class UpcomingBox extends StatelessWidget {
-  // Making selectedTable optional since we'll now show all reservations
   final TableData? selectedTable;
 
   const UpcomingBox({this.selectedTable, super.key});
@@ -399,24 +395,19 @@ class UpcomingBox extends StatelessWidget {
     );
   }
 
-  // Get stream of upcoming reservations regardless of table
   Stream<QuerySnapshot> _getUpcomingReservationsStream(int? tableNumber) {
     final now = DateTime.now();
     final fourHoursLater = now.add(const Duration(hours: 4));
 
     return FirebaseFirestore.instance
-        .collection('Reservations')
-        .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
-        .where(
-          'startTime',
-          isLessThanOrEqualTo: Timestamp.fromDate(fourHoursLater),
-        )
-        .orderBy('startTime', descending: false)
-        .limit(15) // Increased limit for all reservations
-        .snapshots();
+      .collection('Reservations')
+      .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(now))
+      .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(fourHoursLater))
+      .orderBy('startTime', descending: false)
+      .limit(15)
+      .snapshots();
   }
 
-  // Process the snapshot data into a list of Reservation objects
   List<Reservation> _processReservationsData(QuerySnapshot? snapshot) {
     if (snapshot == null || snapshot.docs.isEmpty) {
       return [];

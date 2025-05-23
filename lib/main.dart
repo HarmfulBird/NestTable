@@ -2,22 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:provider/provider.dart';
-import 'Pages/tableviewsimple.dart';
+import 'Pages/tableview_simple.dart';
 import 'Pages/reservations.dart';
+import 'Pages/order_view.dart';
 import 'Components/navigation.dart';
-
-import 'Pages/DataUploaders/uploaderSelector.dart';
+import 'Pages/DataUploaders/uploader_selector.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => TableProvider(),
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => TableProvider())],
       child: const NestTableApp(),
     ),
   );
-  ;
 }
 
 class NestTableApp extends StatelessWidget {
@@ -46,7 +45,7 @@ class HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     TableOverview(),
     Reservations(),
-    Page3(),
+    OrderView(),
     Page4(),
     PageSelector(),
     Page6(),
@@ -93,30 +92,12 @@ class TopBar extends StatelessWidget {
   }
 }
 
-class Page3 extends StatelessWidget {
-  const Page3({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 3")));
-  }
-}
-
 class Page4 extends StatelessWidget {
   const Page4({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(body: Center(child: Text("Page 4")));
-  }
-}
-
-class Page5 extends StatelessWidget {
-  const Page5({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 5")));
   }
 }
 

@@ -17,10 +17,10 @@ class DateTimeBox extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            formattedDateTime, // Display the formatted date and time
+            formattedDateTime,
             style: TextStyle(
-              color: Colors.white, // Text color
-              fontSize: 26.0, // Font size
+              color: Colors.white,
+              fontSize: 26.0,
               fontWeight: FontWeight.bold,
             ),
           ),
