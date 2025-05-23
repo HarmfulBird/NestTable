@@ -376,6 +376,7 @@ class ReservationsState extends State<Reservations> {
     return Stack(
       children: [
         Scaffold(
+          resizeToAvoidBottomInset: false,
           body: Column(
             children: [
               Expanded(

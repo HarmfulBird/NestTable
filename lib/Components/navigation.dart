@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../custom_icons_icons.dart';
+import '../Pages/login_page.dart';
 
 class NavigationSidebar extends StatelessWidget {
   final int selectedIndex;
@@ -19,7 +20,52 @@ class NavigationSidebar extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(height: 20),
-          Icon(CustomIcons.logo, color: Colors.black, size: 50),
+          InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    backgroundColor: const Color(0xFF2F3031),
+                    title: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    content: const Text(
+                      'Are you sure you want to logout?',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                        },
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context); // Close dialog
+                          Navigator.of(context).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => const LoginPage(),
+                            ),
+                          );
+                        },
+                        child: Text(
+                          'Logout',
+                          style: TextStyle(color: Colors.red.shade400),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: Icon(CustomIcons.logo, color: Colors.black, size: 50),
+          ),
           SizedBox(height: 40),
           _buildIconButton(0, CustomIcons.th_large_outline, "Tables", false),
           SizedBox(height: 1),

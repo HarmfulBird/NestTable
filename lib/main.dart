@@ -7,6 +7,7 @@ import 'Pages/reservations.dart';
 import 'Pages/order_view.dart';
 import 'Components/navigation.dart';
 import 'Pages/DataUploaders/uploader_selector.dart';
+import 'Pages/login_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ class NestTableApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(fontFamily: 'Kanit'),
-      home: HomeScreen(),
+      home: const LoginPage(),
     );
   }
 }
@@ -60,6 +61,7 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body: Column(
         children: [
           Row(children: [Expanded(child: TopBar())]),

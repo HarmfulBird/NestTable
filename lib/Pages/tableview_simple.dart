@@ -131,6 +131,7 @@ class TableOverviewState extends State<TableOverview> {
     final isSmallScreen = size.width < 900;
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       body:
         isSmallScreen
           ? _buildMobileLayout(tableProvider)
