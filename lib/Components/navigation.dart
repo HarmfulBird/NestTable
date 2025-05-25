@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../custom_icons_icons.dart';
 import '../Pages/login_page.dart';
+import '../Services/role_service.dart';
 
-class NavigationSidebar extends StatelessWidget {
+class NavigationSidebar extends StatefulWidget {
   final int selectedIndex;
   final ValueChanged<int> onIconTapped;
 
@@ -11,6 +12,28 @@ class NavigationSidebar extends StatelessWidget {
     required this.selectedIndex,
     required this.onIconTapped,
   });
+
+  @override
+  State<NavigationSidebar> createState() => _NavigationSidebarState();
+}
+
+class _NavigationSidebarState extends State<NavigationSidebar> {
+  bool _isManager = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRole();
+  }
+
+  Future<void> _checkUserRole() async {
+    bool isManager = await RoleService.isManager();
+    if (mounted) {
+      setState(() {
+        _isManager = isManager;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +61,7 @@ class NavigationSidebar extends StatelessWidget {
                     actions: [
                       TextButton(
                         onPressed: () {
-                          Navigator.pop(context); // Close dialog
+                          Navigator.pop(context);
                         },
                         child: const Text(
                           'Cancel',
@@ -84,11 +107,18 @@ class NavigationSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildIconButton(int index, IconData icon, String label, bool addThickness) {
-    final bool isSelected = selectedIndex == index;
+  Widget _buildIconButton(
+    int index,
+    IconData icon,
+    String label,
+    bool addThickness,
+  ) {
+    final bool isSelected = widget.selectedIndex == index;
+    final bool isManagementButton = index == 4;
+    final bool isRestricted = isManagementButton && !_isManager;
 
     return GestureDetector(
-      onTap: () => onIconTapped(index),
+      onTap: () => widget.onIconTapped(index),
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
@@ -99,15 +129,38 @@ class NavigationSidebar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Padding(
-              padding: EdgeInsets.all(addThickness ? 4.0 : 0.0),
-              child: _iconLayer(icon, isSelected, 50),
+            Stack(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(addThickness ? 4.0 : 0.0),
+                  child: _iconLayer(icon, isSelected, 50, isRestricted),
+                ),
+                if (isRestricted)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.lock, color: Colors.white, size: 10),
+                    ),
+                  ),
+              ],
             ),
             SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+                color:
+                    isSelected
+                        ? Colors.white
+                        : isRestricted
+                        ? Colors.grey
+                        : Colors.black,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -118,10 +171,20 @@ class NavigationSidebar extends StatelessWidget {
     );
   }
 
-  Widget _iconLayer(IconData icon, bool isSelected, double size) {
+  Widget _iconLayer(
+    IconData icon,
+    bool isSelected,
+    double size,
+    bool isRestricted,
+  ) {
     return Icon(
       icon,
-      color: isSelected ? Colors.white : Colors.black,
+      color:
+          isSelected
+              ? Colors.white
+              : isRestricted
+              ? Colors.grey
+              : Colors.black,
       size: size,
     );
   }

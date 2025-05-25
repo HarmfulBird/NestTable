@@ -8,6 +8,7 @@ import 'Pages/order_view.dart';
 import 'Components/navigation.dart';
 import 'Pages/DataUploaders/uploader_selector.dart';
 import 'Pages/login_page.dart';
+import 'Services/role_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,7 +53,44 @@ class HomeScreenState extends State<HomeScreen> {
     Page6(),
   ];
 
-  void _onIconTapped(int index) {
+  void _onIconTapped(int index) async {
+    // Check if user is trying to access Management page (index 4)
+    if (index == 4) {
+      bool isManager = await RoleService.isManager();
+      if (!isManager) {
+        // Show access denied dialog
+        if (!mounted) return;
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              backgroundColor: const Color(0xFF2F3031),
+              title: const Text(
+                'Access Denied',
+                style: TextStyle(color: Colors.white),
+              ),
+              content: const Text(
+                'You do not have permission to access the Management page. Only users with Manager role can access this area.',
+                style: TextStyle(color: Colors.white),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(color: Colors.deepPurple),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+        return; // Don't change the selected index
+      }
+    }
+
     setState(() {
       _selectedIndex = index;
     });

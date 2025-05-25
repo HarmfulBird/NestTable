@@ -7,12 +7,14 @@ class StaffData {
   final String firstName;
   final String lastName;
   final String initials;
+  final String role;
 
   StaffData({
     required this.id,
     required this.firstName,
     required this.lastName,
     required this.initials,
+    required this.role,
   });
 }
 
@@ -34,6 +36,9 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _initialsController = TextEditingController();
+
+  final List<String> _roleOptions = ['User', 'Manager'];
+  String _selectedRole = 'User';
 
   @override
   void initState() {
@@ -57,21 +62,28 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
 
     try {
       final staffSnapshot =
-        await FirebaseFirestore.instance
-          .collection('Staff')
-          .orderBy('id')
-          .get();
+          await FirebaseFirestore.instance
+              .collection('Staff')
+              .orderBy('id')
+              .get();
 
       final List<StaffData> fetchedStaff =
-        staffSnapshot.docs.map((doc) {
-          final data = doc.data();
-          return StaffData(
-            id: data['id'] ?? '',
-            firstName: data['firstName'] ?? '',
-            lastName: data['lastName'] ?? '',
-            initials: data['initials'] ?? '',
-          );
-        }).toList();
+          staffSnapshot.docs.map((doc) {
+            final data = doc.data();
+            // First try to get the role, provide a default 'User' if it's null or empty
+            String userRole = (data['role'] as String?) ?? 'User';
+            // Extra safety: ensure role is one of the valid options
+            if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
+              userRole = 'User';
+            }
+            return StaffData(
+              id: data['id'] ?? '',
+              firstName: data['firstName'] ?? '',
+              lastName: data['lastName'] ?? '',
+              initials: data['initials'] ?? '',
+              role: userRole,
+            );
+          }).toList();
 
       setState(() {
         _staffList
@@ -92,6 +104,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     _firstNameController.clear();
     _lastNameController.clear();
     _initialsController.clear();
+    _selectedRole = 'User';
     _isEditing = false;
     _editingIndex = -1;
   }
@@ -115,8 +128,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
 
   void _generateRandomId() {
     final random = Random();
-    final id =
-      (random.nextInt(900000) + 100000).toString();
+    final id = (random.nextInt(900000) + 100000).toString();
     setState(() {
       _idController.text = id;
     });
@@ -142,6 +154,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         firstName: firstName,
         lastName: lastName,
         initials: initials,
+        role: _selectedRole,
       );
 
       await FirebaseFirestore.instance.collection('Staff').doc(id).set({
@@ -149,6 +162,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         'firstName': firstName,
         'lastName': lastName,
         'initials': initials,
+        'role': _selectedRole,
       });
 
       if (_isEditing &&
@@ -205,6 +219,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
       _firstNameController.text = staff.firstName;
       _lastNameController.text = staff.lastName;
       _initialsController.text = staff.initials;
+      _selectedRole = staff.role;
     });
   }
 
@@ -233,315 +248,404 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         ],
       ),
       body:
-        _isLoading
-          ? const Center(
-            child: CircularProgressIndicator(color: Colors.deepPurple),
-          )
-          : SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Card(
-                    color: const Color(0xFF2F3031),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _isEditing
-                                ? 'Edit Staff Member'
-                                : 'Add New Staff Member',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
+          _isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.deepPurple),
+              )
+              : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Card(
+                        color: const Color(0xFF2F3031),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _idController,
-                                    decoration: InputDecoration(
-                                      labelText: 'ID',
-                                      labelStyle: TextStyle(
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      focusedBorder:
-                                        const OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    enabled: !_isEditing,
-                                    keyboardType: TextInputType.number,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter staff ID';
-                                      }
-                                      if (!RegExp(
-                                        r'^\d{6}$',
-                                      ).hasMatch(value)) {
-                                        return 'ID must be exactly 6 digits';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                ElevatedButton(
-                                  onPressed:
-                                    _isEditing ? null : _generateRandomId,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepPurple,
-                                    disabledBackgroundColor: Colors.grey,
-                                  ),
-                                  child: const Text(
-                                    'Random',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _firstNameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'First Name',
-                                      labelStyle: TextStyle(
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      focusedBorder:
-                                        const OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    onChanged: (_) => _generateInitials(),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter first name';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _lastNameController,
-                                    decoration: InputDecoration(
-                                      labelText: 'Last Name',
-                                      labelStyle: TextStyle(
-                                        color: Colors.grey.shade400,
-                                      ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color: Colors.grey.shade700,
-                                        ),
-                                      ),
-                                      focusedBorder:
-                                        const OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                    ),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                    ),
-                                    onChanged: (_) => _generateInitials(),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter last name';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                              controller: _initialsController,
-                              decoration: InputDecoration(
-                                labelText: 'Initials',
-                                labelStyle: TextStyle(
-                                  color: Colors.grey.shade400,
-                                ),
-                                helperText:
-                                  'Auto-generated from names but can be edited',
-                                helperStyle: TextStyle(
-                                  color: Colors.grey.shade400,
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                                focusedBorder: const OutlineInputBorder(
-                                  borderSide: BorderSide(
+                                Text(
+                                  _isEditing
+                                      ? 'Edit Staff Member'
+                                      : 'Add New Staff Member',
+                                  style: const TextStyle(
                                     color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                              ),
-                              style: const TextStyle(color: Colors.white),
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter initials';
-                                }
-                                return null;
-                              },
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: _saveStaff,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                minimumSize: const Size(
-                                  double.infinity,
-                                  50,
-                                ),
-                              ),
-                              child: Text(
-                                _isEditing
-                                  ? 'Update Staff Member'
-                                  : 'Add Staff Member',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Card(
-                    color: const Color(0xFF2F3031),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Current Staff',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          _staffList.isEmpty
-                            ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No staff members yet. Add one above.',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            )
-                            : ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _staffList.length,
-                              itemBuilder: (context, index) {
-                                final staff = _staffList[index];
-                                return Card(
-                                  margin: const EdgeInsets.only(
-                                    bottom: 8.0,
-                                  ),
-                                  color: const Color(0xFF212224),
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      backgroundColor: Colors.deepPurple,
-                                      child: Text(
-                                        staff.initials,
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 2,
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: TextFormField(
+                                              controller: _idController,
+                                              decoration: InputDecoration(
+                                                labelText: 'ID',
+                                                labelStyle: TextStyle(
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                      borderSide: BorderSide(
+                                                        color:
+                                                            Colors
+                                                                .grey
+                                                                .shade700,
+                                                      ),
+                                                    ),
+                                                focusedBorder:
+                                                    const OutlineInputBorder(
+                                                      borderSide: BorderSide(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                              enabled: !_isEditing,
+                                              keyboardType:
+                                                  TextInputType.number,
+                                              validator: (value) {
+                                                if (value == null ||
+                                                    value.isEmpty) {
+                                                  return 'Please enter staff ID';
+                                                }
+                                                if (!RegExp(
+                                                  r'^\d{6}$',
+                                                ).hasMatch(value)) {
+                                                  return 'ID must be exactly 6 digits';
+                                                }
+                                                return null;
+                                              },
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          ElevatedButton(
+                                            onPressed:
+                                                _isEditing
+                                                    ? null
+                                                    : _generateRandomId,
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  Colors.deepPurple,
+                                              disabledBackgroundColor:
+                                                  Colors.grey,
+                                            ),
+                                            child: const Text(
+                                              'Random',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          labelText: 'Role',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        dropdownColor: const Color(0xFF2F3031),
                                         style: const TextStyle(
                                           color: Colors.white,
                                         ),
+                                        value: _selectedRole,
+                                        items:
+                                            _roleOptions
+                                                .map(
+                                                  (
+                                                    role,
+                                                  ) => DropdownMenuItem<String>(
+                                                    value: role,
+                                                    child: Text(
+                                                      role,
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                                .toList(),
+                                        onChanged: (value) {
+                                          if (value != null) {
+                                            setState(() {
+                                              _selectedRole = value;
+                                            });
+                                          }
+                                        },
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please select a role';
+                                          }
+                                          return null;
+                                        },
                                       ),
                                     ),
-                                    title: Text(
-                                      '${staff.firstName} ${staff.lastName}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      'ID: ${staff.id}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade400,
-                                      ),
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.edit,
-                                            color: Colors.white,
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _firstNameController,
+                                        decoration: InputDecoration(
+                                          labelText: 'First Name',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
                                           ),
-                                          onPressed:
-                                            () => _editStaff(
-                                              staff,
-                                              index,
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
                                             ),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(
-                                            Icons.delete,
-                                            color: Colors.white,
                                           ),
-                                          onPressed:
-                                            () => _deleteStaff(staff.id),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
                                         ),
-                                      ],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        onChanged: (_) => _generateInitials(),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter first name';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _lastNameController,
+                                        decoration: InputDecoration(
+                                          labelText: 'Last Name',
+                                          labelStyle: TextStyle(
+                                            color: Colors.grey.shade400,
+                                          ),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: Colors.grey.shade700,
+                                            ),
+                                          ),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                        ),
+                                        onChanged: (_) => _generateInitials(),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Please enter last name';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _initialsController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Initials',
+                                    labelStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    helperText:
+                                        'Auto-generated from names but can be edited',
+                                    helperStyle: TextStyle(
+                                      color: Colors.grey.shade400,
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                    focusedBorder: const OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                );
-                              },
+                                  style: const TextStyle(color: Colors.white),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Please enter initials';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 24),
+                                ElevatedButton(
+                                  onPressed: _saveStaff,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurple,
+                                    minimumSize: const Size(
+                                      double.infinity,
+                                      50,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    _isEditing
+                                        ? 'Update Staff Member'
+                                        : 'Add Staff Member',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                        ],
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                      Card(
+                        color: const Color(0xFF2F3031),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Current Staff',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              _staffList.isEmpty
+                                  ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Text(
+                                        'No staff members yet. Add one above.',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
+                                    ),
+                                  )
+                                  : ListView.builder(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: _staffList.length,
+                                    itemBuilder: (context, index) {
+                                      final staff = _staffList[index];
+                                      return Card(
+                                        margin: const EdgeInsets.only(
+                                          bottom: 8.0,
+                                        ),
+                                        color: const Color(0xFF212224),
+                                        child: ListTile(
+                                          leading: CircleAvatar(
+                                            backgroundColor: Colors.deepPurple,
+                                            child: Text(
+                                              staff.initials,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                          title: Text(
+                                            '${staff.firstName} ${staff.lastName}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'ID: ${staff.id}',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Role: ${staff.role}',
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade400,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.edit,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () => _editStaff(
+                                                      staff,
+                                                      index,
+                                                    ),
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.delete,
+                                                  color: Colors.white,
+                                                ),
+                                                onPressed:
+                                                    () =>
+                                                        _deleteStaff(staff.id),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
     );
   }
 }

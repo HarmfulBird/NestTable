@@ -1,13 +1,44 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class DateTimeBox extends StatelessWidget {
+class DateTimeBox extends StatefulWidget {
   const DateTimeBox({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    String formattedDateTime = DateFormat('dd/MM/yyy   hh:mm a').format(DateTime.now());
+  State<DateTimeBox> createState() => _DateTimeBoxState();
+}
 
+class _DateTimeBoxState extends State<DateTimeBox> {
+  late Timer _timer;
+  String _formattedDateTime = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _updateDateTime();
+    // Update every second
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _updateDateTime();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer.cancel();
+    super.dispose();
+  }
+
+  void _updateDateTime() {
+    setState(() {
+      _formattedDateTime = DateFormat(
+        'dd/MM/yyyy   hh:mm a',
+      ).format(DateTime.now());
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.fromLTRB(37.0, 16.0, 37.0, 16.0),
       decoration: BoxDecoration(
@@ -17,7 +48,7 @@ class DateTimeBox extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            formattedDateTime,
+            _formattedDateTime,
             style: TextStyle(
               color: Colors.white,
               fontSize: 26.0,
@@ -29,4 +60,3 @@ class DateTimeBox extends StatelessWidget {
     );
   }
 }
-
