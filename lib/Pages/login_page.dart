@@ -18,17 +18,14 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     try {
-      // Convert username to email format
       String email = "${_usernameController.text.trim()}@nesttable.co.nz";
       String password = _passwordController.text;
 
-      // Attempt to sign in
       await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // If successful, navigate to home screen
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -36,7 +33,6 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } on FirebaseAuthException catch (e) {
-      // Handle specific Firebase Auth errors
       String errorMessage = 'An error occurred. Please try again.';
       
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
@@ -71,7 +67,6 @@ class _LoginPageState extends State<LoginPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo
               const Icon(
                 CustomIcons.logo,
                 size: 200,
@@ -124,7 +119,8 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(                  onPressed: _handleLogin,
+                child: ElevatedButton(
+                  onPressed: _handleLogin,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepPurple,
                     padding: const EdgeInsets.symmetric(vertical: 14),

@@ -156,11 +156,11 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
               label,
               style: TextStyle(
                 color:
-                    isSelected
-                        ? Colors.white
-                        : isRestricted
-                        ? Colors.grey
-                        : Colors.black,
+                  isSelected
+                    ? Colors.white
+                    : isRestricted
+                    ? Colors.grey
+                    : Colors.black,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -180,11 +180,11 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     return Icon(
       icon,
       color:
-          isSelected
-              ? Colors.white
-              : isRestricted
-              ? Colors.grey
-              : Colors.black,
+        isSelected
+          ? Colors.white
+          : isRestricted
+          ? Colors.grey
+          : Colors.black,
       size: size,
     );
   }

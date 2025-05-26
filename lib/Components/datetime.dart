@@ -17,7 +17,6 @@ class _DateTimeBoxState extends State<DateTimeBox> {
   void initState() {
     super.initState();
     _updateDateTime();
-    // Update every second
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       _updateDateTime();
     });

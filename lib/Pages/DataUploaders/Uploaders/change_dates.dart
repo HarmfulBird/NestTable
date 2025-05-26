@@ -350,14 +350,14 @@ class ChangeDatesUploaderState extends State<ChangeDatesUploader> {
                         const SizedBox(height: 16),
                         _reservations.isEmpty
                           ? const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text(
-                                  'No reservations found',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
+                            child: Padding(
+                              padding: EdgeInsets.all(16.0),
+                              child: Text(
+                                'No reservations found',
+                                style: TextStyle(color: Colors.grey),
                               ),
-                            )
+                            ),
+                          )
                           : ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
@@ -365,7 +365,7 @@ class ChangeDatesUploaderState extends State<ChangeDatesUploader> {
                             itemBuilder: (context, index) {
                               final reservation = _reservations[index];
                               final isSelected =
-                                  _selectedReservations.contains(reservation.id);
+                                _selectedReservations.contains(reservation.id);
                               return Card(
                                 margin: const EdgeInsets.only(bottom: 8.0),
                                 color: const Color(0xFF212224),
