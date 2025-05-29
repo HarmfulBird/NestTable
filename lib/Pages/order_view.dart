@@ -82,35 +82,35 @@ class _OrderViewState extends State<OrderView> {
   // Listen for real-time order updates and sync with currently selected table
   void _listenToOrders() {
     FirebaseFirestore.instance
-        .collection('Orders')
-        .where('status', whereIn: ['pending', 'in-progress'])
-        .snapshots()
-        .listen((snapshot) {
-          if (selectedTableId != null) {
-            final tableNumber = int.parse(selectedTableId!.split('_').last);
-            List<OrderItem> tableOrders = [];
+      .collection('Orders')
+      .where('status', whereIn: ['pending', 'in-progress'])
+      .snapshots()
+      .listen((snapshot) {
+        if (selectedTableId != null) {
+          final tableNumber = int.parse(selectedTableId!.split('_').last);
+          List<OrderItem> tableOrders = [];
 
-            // Find orders for the selected table
-            for (var doc in snapshot.docs) {
-              final data = doc.data();
-              if (data['tableNumber'] == tableNumber) {
-                final items = data['items'] as List<dynamic>;
-                tableOrders =
-                  items.map(
-                    (item) =>
-                      OrderItem.fromMap(item as Map<String, dynamic>),
-                  ).toList();
-                break;
-              }
-            }
-
-            if (mounted) {
-              setState(() {
-                currentOrder = tableOrders;
-              });
+          // Find orders for the selected table
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+            if (data['tableNumber'] == tableNumber) {
+              final items = data['items'] as List<dynamic>;
+              tableOrders =
+                items.map(
+                  (item) =>
+                    OrderItem.fromMap(item as Map<String, dynamic>),
+                ).toList();
+              break;
             }
           }
-        });
+
+          if (mounted) {
+            setState(() {
+              currentOrder = tableOrders;
+            });
+          }
+        }
+      });
   }
 
   // Add a menu item to the current order for the selected table

@@ -168,32 +168,32 @@ class PageSelectorState extends State<PageSelector> {
                       mainAxisSize: MainAxisSize.min,
                       // Generate buttons for each available page
                       children:
-                          pageConstructors.keys.map((String name) {
-                            final isSelected = selectedPage == name;
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 8.0),
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    selectedPage = name;
-                                  });
-                                },
-                                // Style button differently based on selection state
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                    isSelected
-                                      ? Colors.deepPurple
-                                      : const Color(0xFF3E3F41),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 20,
-                                    vertical: 12,
-                                  ),
+                        pageConstructors.keys.map((String name) {
+                          final isSelected = selectedPage == name;
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  selectedPage = name;
+                                });
+                              },
+                              // Style button differently based on selection state
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                  isSelected
+                                    ? Colors.deepPurple
+                                    : const Color(0xFF3E3F41),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 12,
                                 ),
-                                child: Text(name),
                               ),
-                            );
-                          }).toList(),
+                              child: Text(name),
+                            ),
+                          );
+                        }).toList(),
                     ),
                   ),
                 ),

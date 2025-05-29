@@ -203,11 +203,11 @@ class _NavigationSidebarState extends State<NavigationSidebar> {
     return Icon(
       icon, // Apply color based on the button's state
       color:
-          isSelected
-              ? Colors.white // White for selected state
-              : isRestricted
-              ? Colors.grey // Grey for restricted access
-              : Colors.black, // Black for normal state
+        isSelected
+          ? Colors.white // White for selected state
+          : isRestricted
+          ? Colors.grey // Grey for restricted access
+          : Colors.black, // Black for normal state
       size: size,
     );
   }

@@ -147,10 +147,7 @@ class ItemDataUploaderState extends State<ItemDataUploader> {
 
       // Create ItemData object with form values
       final itemData = ItemData(
-        id:
-          _isEditing
-            ? _itemsList[_editingIndex].id
-            : '', // Use existing ID for updates, empty for new items
+        id: _isEditing? _itemsList[_editingIndex].id : '', // Use existing ID for updates, empty for new items
         type: _selectedType ?? '',
         name: _nameController.text,
         price: double.parse(_priceController.text),

@@ -144,20 +144,20 @@ class ManagementDashboardState extends State<ManagementDashboard>
       ),
       // Conditional body rendering based on loading state and data availability
       body:
-          isLoading
-              ? const Center(
-                child: CircularProgressIndicator(color: Colors.deepPurple),
-              )
-              : currentStats.containsKey('error')
-              ? _buildErrorWidget()
-              : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildDashboardContent('Daily'),
-                  _buildDashboardContent('Weekly'),
-                  _buildDashboardContent('Monthly'),
-                ],
-              ),
+        isLoading
+          ? const Center(
+            child: CircularProgressIndicator(color: Colors.deepPurple),
+          )
+          : currentStats.containsKey('error')
+          ? _buildErrorWidget()
+          : TabBarView(
+            controller: _tabController,
+            children: [
+              _buildDashboardContent('Daily'),
+              _buildDashboardContent('Weekly'),
+              _buildDashboardContent('Monthly'),
+            ],
+          ),
     );
   }
 
@@ -244,8 +244,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
         // Calculate start of current week (Monday) and end (Sunday)
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
         final weekEnd = weekStart.add(const Duration(days: 6));
-        dateRange =
-            '${DateFormat('MMM d').format(weekStart)} - ${DateFormat('MMM d, y').format(weekEnd)}';
+        dateRange = '${DateFormat('MMM d').format(weekStart)} - ${DateFormat('MMM d, y').format(weekEnd)}';
         break;
       case 'Monthly':
         dateRange = DateFormat('MMMM y').format(now);
@@ -673,7 +672,6 @@ class ManagementDashboardState extends State<ManagementDashboard>
                       ),
                     ),
                   )
-
               else
                 const Text(
                   'No menu item data available',

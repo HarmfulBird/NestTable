@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../Components/reservation_data.dart';
 
-// A stateful widget that provides a complete CRUD interface for restaurant reservations
-// This widget allows users to create, read, update, and delete reservation data
+// A stateful widget that provides a CRUD interface for reservations
+// That allows users to create, read, update, and delete reservation data
 // stored in Firebase Firestore
 class ReservationDataUploader extends StatefulWidget {
   const ReservationDataUploader({super.key});
@@ -174,8 +174,7 @@ class ReservationDataUploaderState extends State<ReservationDataUploader> {
     // Show date picker with start time as minimum date
     final DateTime? date = await showDatePicker(
       context: context,
-      initialDate:
-          _selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2)),
+      initialDate: _selectedEndTime ?? _selectedStartTime!.add(const Duration(hours: 2)),
       firstDate: _selectedStartTime!,
       lastDate: _selectedStartTime!.add(const Duration(days: 1)),
     );
@@ -261,19 +260,19 @@ class ReservationDataUploaderState extends State<ReservationDataUploader> {
 
       // Save to Firebase Firestore
       await FirebaseFirestore.instance
-          .collection('Reservations')
-          .doc('reservation_$id')
-          .set({
-            'id': id,
-            'customerName': _customerNameController.text,
-            'tableNumber': int.parse(_tableNumberController.text),
-            'startTime': Timestamp.fromDate(_selectedStartTime!),
-            'endTime': Timestamp.fromDate(_selectedEndTime!),
-            'partySize': int.parse(_partySizeController.text),
-            'seated': false,
-            'isFinished': false,
-            'specialNotes': _specialNotesController.text,
-          });
+        .collection('Reservations')
+        .doc('reservation_$id')
+        .set({
+          'id': id,
+          'customerName': _customerNameController.text,
+          'tableNumber': int.parse(_tableNumberController.text),
+          'startTime': Timestamp.fromDate(_selectedStartTime!),
+          'endTime': Timestamp.fromDate(_selectedEndTime!),
+          'partySize': int.parse(_partySizeController.text),
+          'seated': false,
+          'isFinished': false,
+          'specialNotes': _specialNotesController.text,
+        });
 
       // Update local list based on edit or add mode
       if (_isEditing &&

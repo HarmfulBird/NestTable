@@ -56,9 +56,9 @@ class OrderData {
       id: doc.id,
       tableNumber: data['tableNumber'] ?? 0,
       items:
-          (data['items'] as List? ?? [])
-              .map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
-              .toList(),
+        (data['items'] as List? ?? [])
+          .map((item) => OrderItem.fromMap(item as Map<String, dynamic>))
+          .toList(),
       totalAmount: (data['totalAmount'] ?? 0.0).toDouble(),
       status: data['status'] ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp).toDate(),

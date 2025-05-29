@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../Components/tableview_data.dart';
 
-// TableDataUploader is a Flutter widget that provides a complete CRUD interface
+// TableDataUploader provides a complete CRUD interface
 // for managing restaurant table data. It allows users to create, read, update,
 // and delete table information including table numbers, capacity, assigned servers,
 // status, and current guest count. The widget integrates with Firebase Firestore

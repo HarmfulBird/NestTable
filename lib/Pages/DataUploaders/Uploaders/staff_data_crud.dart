@@ -79,29 +79,29 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     try {
       // Query Firebase for all staff documents, ordered by ID
       final staffSnapshot =
-          await FirebaseFirestore.instance
-              .collection('Staff')
-              .orderBy('id')
-              .get();
+        await FirebaseFirestore.instance
+          .collection('Staff')
+          .orderBy('id')
+          .get();
 
       // Convert Firestore documents to StaffData objects
       final List<StaffData> fetchedStaff =
-          staffSnapshot.docs.map((doc) {
-            final data = doc.data();
-            // Validate and default the role field
-            String userRole = (data['role'] as String?) ?? 'User';
-            if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
-              userRole = 'User';
-            }
-            return StaffData(
-              id: data['id'] ?? '',
-              firstName: data['firstName'] ?? '',
-              lastName: data['lastName'] ?? '',
-              initials: data['initials'] ?? '',
-              role: userRole,
-              defaultView: data['defaultView'] ?? 'Tables',
-            );
-          }).toList();
+        staffSnapshot.docs.map((doc) {
+          final data = doc.data();
+          // Validate and default the role field
+          String userRole = (data['role'] as String?) ?? 'User';
+          if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
+            userRole = 'User';
+          }
+          return StaffData(
+            id: data['id'] ?? '',
+            firstName: data['firstName'] ?? '',
+            lastName: data['lastName'] ?? '',
+            initials: data['initials'] ?? '',
+            role: userRole,
+            defaultView: data['defaultView'] ?? 'Tables',
+          );
+        }).toList();
 
       // Update UI with fetched data
       setState(() {
@@ -196,8 +196,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
           'lastName': lastName,
           'initials': initials,
           'role': _selectedRole,
-          'defaultView':
-              _isEditing ? null : 'Tables', // Only set default for new users
+          'defaultView': _isEditing ? null : 'Tables', // Only set default for new users
         },
         SetOptions(merge: true),
       ); // Use merge to preserve existing defaultView for updates
@@ -326,17 +325,17 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                               color: Colors.grey.shade400,
                                             ),
                                             enabledBorder:
-                                                OutlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                    color: Colors.grey.shade700,
-                                                  ),
+                                              OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.grey.shade700,
                                                 ),
+                                              ),
                                             focusedBorder:
-                                                const OutlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                    color: Colors.white,
-                                                  ),
+                                              const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                  color: Colors.white,
                                                 ),
+                                              ),
                                           ),
                                           style: const TextStyle(
                                             color: Colors.white,
