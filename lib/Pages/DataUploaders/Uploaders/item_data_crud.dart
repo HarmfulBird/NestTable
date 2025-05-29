@@ -398,8 +398,9 @@ class ItemDataUploaderState extends State<ItemDataUploader> {
                                     ),
                                     keyboardType: TextInputType.number,
                                     validator: (value) {
-                                      if (value?.isEmpty ?? true)
+                                      if (value?.isEmpty ?? true) {
                                         return 'Price is required';
+                                      }
                                       if (double.tryParse(value!) == null) {
                                         return 'Please enter a valid price';
                                       }

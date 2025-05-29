@@ -16,15 +16,14 @@ class UserPreferenceService {
 
       // Query staff collection for user's document
       QuerySnapshot staffQuery =
-          await _firestore
-              .collection('Staff')
-              .where('id', isEqualTo: username)
-              .limit(1)
-              .get();
+        await _firestore
+          .collection('Staff')
+          .where('id', isEqualTo: username)
+          .limit(1)
+          .get();
 
       if (staffQuery.docs.isNotEmpty) {
-        Map<String, dynamic> data =
-            staffQuery.docs.first.data() as Map<String, dynamic>;
+        Map<String, dynamic> data = staffQuery.docs.first.data() as Map<String, dynamic>;
         return data['defaultView'] ?? 'Tables';
       }
 
@@ -45,11 +44,11 @@ class UserPreferenceService {
 
       // Query staff collection for user's document
       QuerySnapshot staffQuery =
-          await _firestore
-              .collection('Staff')
-              .where('id', isEqualTo: username)
-              .limit(1)
-              .get();
+        await _firestore
+          .collection('Staff')
+          .where('id', isEqualTo: username)
+          .limit(1)
+          .get();
 
       if (staffQuery.docs.isNotEmpty) {
         // Update existing document with new default view

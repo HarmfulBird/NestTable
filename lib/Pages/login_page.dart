@@ -77,10 +77,10 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               // App logo at the top
               const Icon(CustomIcons.logo, size: 200, color: Colors.white),
-              const SizedBox(height: 60),
-              // Username input field
+              const SizedBox(height: 60), // Username input field
               TextField(
                 controller: _usernameController,
+                keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Username / ID',
@@ -97,11 +97,13 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              // Password input field with visibility toggle
+              const SizedBox(
+                height: 16,
+              ), // Password input field with visibility toggle
               TextField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
+                keyboardType: TextInputType.number,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   hintText: 'Password',
@@ -120,8 +122,8 @@ class _LoginPageState extends State<LoginPage> {
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
-                        ? Icons.visibility
-                        : Icons.visibility_off,
+                          ? Icons.visibility
+                          : Icons.visibility_off,
                       color: Colors.grey.shade400,
                     ),
                     onPressed: () {

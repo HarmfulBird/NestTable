@@ -76,7 +76,7 @@ class ItemData {
     int? preparationTime,
   }) {
     return ItemData(
-      id: this.id, // ID remains the same as it's immutable
+      id: id, // ID remains the same as it's immutable
       type: type ?? this.type,
       name: name ?? this.name,
       price: price ?? this.price,

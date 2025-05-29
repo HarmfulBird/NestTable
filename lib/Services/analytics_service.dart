@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/material.dart';
 
 class AnalyticsService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -122,7 +121,6 @@ class AnalyticsService {
         }
       }
 
-      final staffSnapshot = await _firestore.collection('Staff').get();
       Map<String, int> staffOrderCounts = {};
       for (var doc in ordersSnapshot.docs) {
         final tableNumber = doc.data()['tableNumber'];
@@ -187,7 +185,6 @@ class AnalyticsService {
           .where('startTime', isLessThan: Timestamp.fromDate(monthEnd))
           .get();
 
-      final itemsSnapshot = await _firestore.collection('Items').get();
       Map<String, int> itemOrderCounts = {};
       double totalRevenue = 0;
 

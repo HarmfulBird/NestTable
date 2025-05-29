@@ -32,7 +32,6 @@ class _ServersPageState extends State<ServersPage> {
 
   late Stream<QuerySnapshot> _staffStream;
   late Stream<QuerySnapshot> _tablesStream;
-  late Stream<QuerySnapshot> _reservationsStream;
   @override
   void initState() {
     super.initState();
@@ -68,8 +67,6 @@ class _ServersPageState extends State<ServersPage> {
             .snapshots();
 
     // Stream for reservation data (used for table status checking)
-    _reservationsStream =
-        FirebaseFirestore.instance.collection('Reservations').snapshots();
   }
 
   // Initialize user data and check manager permissions
@@ -336,7 +333,7 @@ class _ServersPageState extends State<ServersPage> {
                           color: const Color(0xFF2F3031),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: Colors.grey.shade700.withOpacity(0.3),
+                            color: Colors.grey.shade700.withValues(alpha: 0.3),
                             width: 1,
                           ),
                         ),
@@ -424,7 +421,7 @@ class _ServersPageState extends State<ServersPage> {
                         color: const Color(0xFF2F3031),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: Colors.grey.shade700.withOpacity(0.3),
+                          color: Colors.grey.shade700.withValues(alpha: 0.3),
                           width: 1,
                         ),
                       ),
@@ -647,7 +644,7 @@ class _ServersPageState extends State<ServersPage> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.8),
+                    color: Colors.deepPurple.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Icon(Icons.edit, color: Colors.white, size: 20),
@@ -741,7 +738,7 @@ class _ServersPageState extends State<ServersPage> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.8),
+                    color: Colors.deepPurple.withValues(alpha: 0.8),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: const Icon(Icons.edit, color: Colors.white, size: 20),
@@ -1250,7 +1247,7 @@ class _ServersPageState extends State<ServersPage> {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: Colors.deepPurple.withOpacity(0.8),
+                      color: Colors.deepPurple.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Icon(

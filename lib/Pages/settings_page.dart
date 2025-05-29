@@ -118,15 +118,6 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildInfoRow('Username', _username),
             _buildInfoRow('Role', _currentRole),
             _buildInfoRow('Email', '$_username@nesttable.co.nz'),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _changePassword,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Change Password'),
-            ),
           ],
         ),
       ),
@@ -155,7 +146,31 @@ class _SettingsPageState extends State<SettingsPage> {
               'Use dark theme throughout the app',
               true,
               (value) {
-                // Toggle dark mode
+                // Show feature coming soon dialog
+                showDialog(
+                  context: context,
+                  builder:
+                      (context) => AlertDialog(
+                        backgroundColor: const Color(0xFF2F3031),
+                        title: const Text(
+                          'Feature Coming Soon',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
+                        content: const Text(
+                          'Dark mode toggle functionality will be available in a future update.',
+                          style: TextStyle(color: Colors.white, fontSize: 18),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              'OK',
+                              style: TextStyle(color: Colors.deepPurple),
+                            ),
+                          ),
+                        ],
+                      ),
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -284,7 +299,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         child: const Text(
           'Logout',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -298,13 +313,13 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Text(
             label,
-            style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
           ),
           Text(
             value,
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -321,8 +336,14 @@ class _SettingsPageState extends State<SettingsPage> {
   ) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade400)),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white, fontSize: 18),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
+      ),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -341,17 +362,17 @@ class _SettingsPageState extends State<SettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 18)),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: currentValue,
           dropdownColor: const Color(0xFF2F3031),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white, fontSize: 18),
           decoration: InputDecoration(
             enabledBorder: OutlineInputBorder(
               borderSide: BorderSide(color: Colors.grey.shade700),
@@ -378,47 +399,25 @@ class _SettingsPageState extends State<SettingsPage> {
   ) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: Colors.white70),
-      title: Text(title, style: const TextStyle(color: Colors.white)),
-      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade400)),
+      leading: Icon(icon, color: Colors.white70, size: 20),
+      title: Text(
+        title,
+        style: const TextStyle(color: Colors.white, fontSize: 18),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(color: Colors.grey.shade400, fontSize: 18),
+      ),
       trailing: const Icon(
         Icons.arrow_forward_ios,
         color: Colors.white70,
-        size: 16,
+        size: 18,
       ),
       onTap: onTap,
     );
   }
 
   // Action methods
-  void _changePassword() {
-    // Implement password change dialog
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2F3031),
-            title: const Text(
-              'Change Password',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: const Text(
-              'Password change functionality would be implemented here.',
-              style: TextStyle(color: Colors.white),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(color: Colors.deepPurple),
-                ),
-              ),
-            ],
-          ),
-    );
-  }
-
   void _checkSystemStatus() {
     // Implement system status check
     showDialog(
@@ -490,11 +489,81 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   void _showPrivacyPolicy() {
-    // Show privacy policy dialog or navigate to web view
+    // Show privacy policy dialog or redirect to website
+  }
+  void _showSupport() {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2F3031),
+            title: const Text(
+              'Support',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Need help? Contact our support team:',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                _buildSupportInfoRow(
+                  Icons.email,
+                  'Email',
+                  'Avery@Fluffytech.co.nz',
+                ),
+                const SizedBox(height: 8),
+                _buildSupportInfoRow(Icons.phone, 'Phone', '0275422208'),
+                const SizedBox(height: 8),
+                _buildSupportInfoRow(Icons.web, 'Website', 'FluffTech.co.nz'),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'Close',
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+              ),
+            ],
+          ),
+    );
   }
 
-  void _showSupport() {
-    // Show support information
+  Widget _buildSupportInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white70, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   void _showLogoutConfirmation() {

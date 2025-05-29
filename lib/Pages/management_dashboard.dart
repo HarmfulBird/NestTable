@@ -359,7 +359,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
       decoration: BoxDecoration(
         color: const Color(0xFF2F3031),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,7 +521,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
       decoration: BoxDecoration(
         color: const Color(0xFF2F3031),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -582,27 +582,27 @@ class ManagementDashboardState extends State<ManagementDashboard>
               const SizedBox(height: 12),
               if (currentStats['staffPerformance'] != null)
                 ...(currentStats['staffPerformance'] as Map<String, int>)
-                    .entries
-                    .take(5)
-                    .map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              entry.key,
-                              style: const TextStyle(color: Colors.white70),
-                            ),
-                            Text(
-                              '${entry.value} orders',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
+                  .entries
+                  .take(5)
+                  .map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            entry.key,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          Text(
+                            '${entry.value} orders',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
                       ),
-                    )
-                    .toList()
+                    ),
+                  )
+
               else
                 const Text(
                   'No staff performance data available',
@@ -651,29 +651,29 @@ class ManagementDashboardState extends State<ManagementDashboard>
               const SizedBox(height: 12),
               if (currentStats['popularItems'] != null)
                 ...(currentStats['popularItems'] as List<MapEntry<String, int>>)
-                    .take(5)
-                    .map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                entry.key,
-                                style: const TextStyle(color: Colors.white70),
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                  .take(5)
+                  .map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(color: Colors.white70),
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            Text(
-                              '${entry.value} orders',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
+                          ),
+                          Text(
+                            '${entry.value} orders',
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        ],
                       ),
-                    )
-                    .toList()
+                    ),
+                  )
+
               else
                 const Text(
                   'No menu item data available',
@@ -683,61 +683,6 @@ class ManagementDashboardState extends State<ManagementDashboard>
           ),
         ),
         const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  // Builds action buttons section with live revenue display
-  Widget _buildActionButtons() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: StreamBuilder<double>(
-            stream: AnalyticsService.getTodayRevenueStream(),
-            builder: (context, snapshot) {
-              final revenue = snapshot.data ?? 0.0;
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade600, Colors.green.shade800],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Today\'s Revenue',
-                          style: TextStyle(color: Colors.white70, fontSize: 16),
-                        ),
-                        Text(
-                          'Live Updates',
-                          style: TextStyle(color: Colors.white70, fontSize: 12),
-                        ),
-                      ],
-                    ),
-                    Text(
-                      '\$${revenue.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
       ],
     );
   }
