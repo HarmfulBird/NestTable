@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../Components/datetime.dart';
 import '../Components/tableview_data.dart';
 
+// Provider class that manages table data and reservations state
+// Handles real-time updates from Firestore for both tables and reservations
 class TableProvider extends ChangeNotifier {
   List<TableData> tables = [];
   bool isLoading = true;
@@ -14,6 +16,8 @@ class TableProvider extends ChangeNotifier {
     _listenToReservations();
   }
 
+  // Sets up a real-time listener for reservation changes from Firestore
+  // Updates local reservations list and triggers table status updates
   void _listenToReservations() {
     FirebaseFirestore.instance.collection('Reservations').snapshots().listen((
       snapshot,
@@ -26,30 +30,33 @@ class TableProvider extends ChangeNotifier {
               'startTime': (doc.data()['startTime'] as Timestamp).toDate(),
               'seated': doc.data()['seated'] ?? false,
             },
-          )
-          .toList();
+          ).toList();
       _updateTableStatuses();
     });
   }
 
+  // Updates table statuses based on current reservations and time
+  // Determines if tables are Open, Reserved, or Seated based on reservation data
   void _updateTableStatuses() {
     final now = DateTime.now();
 
     for (var table in tables) {
+      // Find reservations for this table within 2 hours of current time
       final tableReservations =
         reservations
           .where(
             (res) =>
               res['tableNumber'] == table.tableNumber &&
               res['startTime'].difference(now).inHours.abs() <= 2,
-          )
-          .toList();
+          ).toList();
 
+      // If no reservations, table is open
       if (tableReservations.isEmpty) {
         _updateTableStatus(table.tableNumber, 'Open', Colors.green);
         continue;
       }
 
+      // Check if any reservation is currently seated
       final seatedReservation = tableReservations.any(
         (res) => res['seated'] == true,
       );
@@ -58,10 +65,12 @@ class TableProvider extends ChangeNotifier {
         continue;
       }
 
+      // If there are reservations but no one is seated, table is reserved
       _updateTableStatus(table.tableNumber, 'Reserved', Colors.orange);
     }
   }
 
+  // Updates a specific table's status in Firestore
   void _updateTableStatus(int tableNumber, String status, Color statusColor) {
     FirebaseFirestore.instance
       .collection('Tables')
@@ -69,6 +78,8 @@ class TableProvider extends ChangeNotifier {
       .update({'status': status});
   }
 
+  // Sets up real-time listener for table data from Firestore
+  // Converts Firestore documents to TableData objects and updates UI
   void _listenToTables() {
     FirebaseFirestore.instance
       .collection('Tables')
@@ -79,6 +90,7 @@ class TableProvider extends ChangeNotifier {
         for (var doc in snapshot.docs) {
           final data = doc.data();
 
+          // Determine status color based on table status
           Color statusColor;
           switch (data['status']) {
             case 'Open':
@@ -114,6 +126,8 @@ class TableProvider extends ChangeNotifier {
   }
 }
 
+// Main widget that displays the table overview with responsive layout
+// Switches between desktop and mobile layouts based on screen size
 class TableOverview extends StatefulWidget {
   const TableOverview({super.key});
 
@@ -139,6 +153,8 @@ class TableOverviewState extends State<TableOverview> {
     );
   }
 
+  // Builds the desktop layout with side panel and main content area
+  // Side panel contains datetime, table info, and upcoming reservations
   Widget _buildDesktopLayout(TableProvider tableProvider) {
     return Column(
       children: [
@@ -146,6 +162,7 @@ class TableOverviewState extends State<TableOverview> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Left sidebar with table information and controls
               Container(
                 width: 400,
                 padding: const EdgeInsets.all(16.0),
@@ -166,6 +183,7 @@ class TableOverviewState extends State<TableOverview> {
                 ),
               ),
 
+              // Main content area displaying tables grid
               Expanded(
                 child: Container(
                   color: const Color(0xFF212224),
@@ -195,9 +213,12 @@ class TableOverviewState extends State<TableOverview> {
     );
   }
 
+  // Builds the mobile layout with collapsible expansion tile for table info
+  // Optimized for smaller screens with vertical layout
   Widget _buildMobileLayout(TableProvider tableProvider) {
     return Column(
       children: [
+        // Collapsible header section for mobile
         ExpansionTile(
           title: const Text(
             'Table Information',
@@ -229,6 +250,7 @@ class TableOverviewState extends State<TableOverview> {
           ],
         ),
 
+        // Main tables grid for mobile
         Expanded(
           child: Container(
             color: const Color(0xFF212224),
@@ -252,12 +274,15 @@ class TableOverviewState extends State<TableOverview> {
     );
   }
 
+  // Creates a responsive grid layout for displaying table cards
+  // Adjusts columns and aspect ratio based on screen width
   Widget _buildTablesGrid(TableProvider tableProvider) {
     final width = MediaQuery.of(context).size.width;
 
     int crossAxisCount = 1;
     double childAspectRatio = 3 / 2;
 
+    // Determine grid layout based on screen width
     if (width > 1400) {
       crossAxisCount = 3;
       childAspectRatio = 3 / 1.5;
@@ -295,6 +320,8 @@ class TableOverviewState extends State<TableOverview> {
   }
 }
 
+// Individual table card widget that displays table information
+// Shows table number, capacity, server, status, and current guests
 class TableCard extends StatelessWidget {
   final TableData tableData;
   final bool isSelected;
@@ -313,6 +340,7 @@ class TableCard extends StatelessWidget {
     final isSmallScreen = width < 600;
     final isMediumScreen = width >= 600 && width < 900;
 
+    // Adjust font sizes based on screen size
     final tableFontSize = isSmallScreen ? 24.0 : 40.0;
     final baseFontSize = isSmallScreen ? 16.0 : (isMediumScreen ? 22.0 : 30.0);
 
@@ -323,6 +351,7 @@ class TableCard extends StatelessWidget {
         curve: Curves.easeInOut,
         decoration: BoxDecoration(
           color: const Color(0xFF2F3031),
+          // Highlight selected table with blue border
           border: Border.all(
             color: isSelected ? const Color(0xFF72D9FF) : Colors.transparent,
             width: 3,
@@ -342,12 +371,15 @@ class TableCard extends StatelessWidget {
     );
   }
 
+  // Builds the top row containing table number, capacity, and assigned server
+  // Layout changes based on screen size (vertical for mobile, horizontal for desktop)
   Widget _buildTopRow(
     double tableFontSize,
     double baseFontSize,
     bool isSmallScreen,
   ) {
     if (isSmallScreen) {
+      // Mobile layout: vertical arrangement
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -362,6 +394,7 @@ class TableCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
+              // Table capacity badge
               Container(
                 padding: const EdgeInsets.symmetric(
                   vertical: 4,
@@ -381,6 +414,7 @@ class TableCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
+              // Assigned server badge
               Expanded(
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -407,6 +441,7 @@ class TableCard extends StatelessWidget {
         ],
       );
     } else {
+      // Desktop layout: horizontal arrangement
       return Row(
         children: [
           Text(
@@ -418,6 +453,7 @@ class TableCard extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          // Table capacity badge
           Container(
             padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
             decoration: BoxDecoration(
@@ -434,6 +470,7 @@ class TableCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
+          // Assigned server badge
           Container(
             padding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
             decoration: BoxDecoration(
@@ -454,6 +491,8 @@ class TableCard extends StatelessWidget {
     }
   }
 
+  // Builds the bottom row showing table status and current guest count
+  // Status badge color reflects current table state (Open/Reserved/Seated)
   Widget _buildBottomRow(double baseFontSize, bool isSmallScreen) {
     final double statusWidth = isSmallScreen ? 110 : 135;
     final double statusHeight = isSmallScreen ? 40 : 53;
@@ -465,6 +504,7 @@ class TableCard extends StatelessWidget {
 
     return Row(
       children: [
+        // Table status badge with color-coded background
         Container(
           padding: padding,
           width: statusWidth,
@@ -487,8 +527,10 @@ class TableCard extends StatelessWidget {
           ),
         ),
         SizedBox(width: isSmallScreen ? 8 : 15),
+        // Guest count display with overlapping design
         Stack(
           children: [
+            // Background "Guests" label
             Container(
               padding: EdgeInsets.fromLTRB(
                 isSmallScreen ? 12 : 15,
@@ -509,6 +551,7 @@ class TableCard extends StatelessWidget {
                 ),
               ),
             ),
+            // Overlapping guest count number
             Positioned(
               right: 0,
               top: 0,

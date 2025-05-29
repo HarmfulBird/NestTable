@@ -8,11 +8,17 @@ import 'Pages/order_view.dart';
 import 'Components/navigation.dart';
 import 'Pages/management_dashboard.dart';
 import 'Pages/login_page.dart';
+import 'Pages/servers_page.dart';
 import 'Services/role_service.dart';
+import 'Pages/settings_page.dart';
 
+// Entry point of the app - initializes Firebase and starts the app
 Future<void> main() async {
+  // Ensures Flutter widget binding is properly initialized before running async operations
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize Firebase with platform-specific configuration
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Start the app with state management provider for table data
   runApp(
     MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => TableProvider())],
@@ -21,19 +27,25 @@ Future<void> main() async {
   );
 }
 
+// Root widget of the NestTable application
 class NestTableApp extends StatelessWidget {
   const NestTableApp({super.key});
 
+  // Builds the main app structure with theme and starting page
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // Remove debug banner for cleaner appearance
       debugShowCheckedModeBanner: false,
+      // Apply custom Kanit font family throughout the app
       theme: ThemeData(fontFamily: 'Kanit'),
+      // Set LoginPage as the initial screen
       home: const LoginPage(),
     );
   }
 }
 
+// Main home screen widget that manages navigation between different pages
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -41,23 +53,31 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => HomeScreenState();
 }
 
+/// State class that handles navigation logic and page display
 class HomeScreenState extends State<HomeScreen> {
+  // Tracks which navigation item is currently selected
   int _selectedIndex = 0;
 
+  // List of all available pages in the app navigation
   final List<Widget> _pages = [
     TableOverview(),
     Reservations(),
     OrderView(),
-    Page4(),
+    ServersPage(),
     ManagementDashboard(),
-    Page6(),
+    SettingsPage(),
   ];
 
+  // Handles navigation when sidebar icons are tapped
   void _onIconTapped(int index) async {
+    // Special handling for Management Dashboard (index 4) - requires manager role
     if (index == 4) {
+      // Check if current user has manager privileges
       bool isManager = await RoleService.isManager();
       if (!isManager) {
+        // Ensure widget is still mounted before showing dialog
         if (!mounted) return;
+        // Show access denied dialog for non-manager users
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -85,29 +105,36 @@ class HomeScreenState extends State<HomeScreen> {
             );
           },
         );
+        // Exit early without changing page
         return;
       }
     }
 
+    // Update selected index to display the chosen page
     setState(() {
       _selectedIndex = index;
     });
   }
 
+  // Builds the main screen layout with top bar and sidebar navigation
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Prevent keyboard from pushing content up
       resizeToAvoidBottomInset: false,
       body: Column(
         children: [
+          // Top bar section at the top of the screen
           Row(children: [Expanded(child: TopBar())]),
           Expanded(
             child: Row(
               children: [
+                // Left sidebar navigation with current selection and tap handler
                 NavigationSidebar(
                   selectedIndex: _selectedIndex,
                   onIconTapped: _onIconTapped,
                 ),
+                // Main content area displaying the selected page
                 Expanded(child: _pages[_selectedIndex]),
               ],
             ),
@@ -118,32 +145,19 @@ class HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// Simple top bar widget that provides a black header section
 class TopBar extends StatelessWidget {
   const TopBar({super.key});
 
+  // Creates a black top bar with minimal height
   @override
   Widget build(BuildContext context) {
     return Container(
+      // Black background color for the top bar
       color: Colors.black,
+      // Empty row with fixed height to create space
       child: Row(children: [SizedBox(height: 25)]),
     );
   }
 }
 
-class Page4 extends StatelessWidget {
-  const Page4({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 4")));
-  }
-}
-
-class Page6 extends StatelessWidget {
-  const Page6({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(body: Center(child: Text("Page 6")));
-  }
-}

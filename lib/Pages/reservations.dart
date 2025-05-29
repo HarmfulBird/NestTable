@@ -7,6 +7,7 @@ import '../Components/reservation_data.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Main widget for the reservations page - provides a stateful widget for managing restaurant reservations
 class Reservations extends StatefulWidget {
   const Reservations({super.key});
 
@@ -14,28 +15,38 @@ class Reservations extends StatefulWidget {
   State<Reservations> createState() => ReservationsState();
 }
 
+// State class that manages all reservation functionality including CRUD operations,
+// status updates, calendar view, and real-time Firebase integration
 class ReservationsState extends State<Reservations> {
   ReservationData? selectedReservation;
   List<ReservationData> reservations = [];
   DateTime currentDate = DateTime.now();
   bool showOverlay = false;
   bool isEditing = false;
+
+  // Form controllers for reservation input fields
   TextEditingController firstNameController = TextEditingController();
   TextEditingController surnameController = TextEditingController();
   TextEditingController guestsController = TextEditingController();
   TextEditingController specialNotesController = TextEditingController();
+
+  // Selected values for the reservation form
   DateTime? selectedDate;
   TimeOfDay? selectedTime;
   String? selectedTable;
+  
+  // Temporary status values used during editing
   bool? tempSeated;
   bool? tempFinished;
 
   @override
+  // Initialize the page and start listening to reservation changes
   void initState() {
     super.initState();
     _listenToReservations();
   }
 
+  // Listen to real-time changes from Firestore and update the reservations list
   void _listenToReservations() {
     FirebaseFirestore.instance
       .collection('Reservations')
@@ -43,9 +54,10 @@ class ReservationsState extends State<Reservations> {
       .snapshots()
       .listen((snapshot) {
         final List<ReservationData> updatedReservations = [];
-
+        // Process each document from the Firestore snapshot
         for (var doc in snapshot.docs) {
           final data = doc.data();
+          // Create ReservationData object from Firestore document
           updatedReservations.add(
             ReservationData(
               id: data['id'],
@@ -56,6 +68,7 @@ class ReservationsState extends State<Reservations> {
               partySize: data['partySize'] ?? 0,
               seated: data['seated'] ?? false,
               isFinished: data['isFinished'] ?? false,
+              // Determine color based on reservation status
               color: _getReservationColor(
                 data['seated'] ?? false,
                 data['isFinished'] ?? false,
@@ -65,6 +78,7 @@ class ReservationsState extends State<Reservations> {
           );
         }
 
+        // Update the UI with new reservation data
         setState(() {
           reservations = updatedReservations;
           _updateSelectedReservation();
@@ -72,6 +86,7 @@ class ReservationsState extends State<Reservations> {
       });
   }
 
+  // Return the appropriate color based on reservation status
   Color _getReservationColor(bool isSeated, bool isFinished) {
     if (isFinished) {
       return Colors.grey.shade700;
@@ -82,6 +97,7 @@ class ReservationsState extends State<Reservations> {
     }
   }
 
+  // Navigate to the previous day and update selected reservation
   void _previousDay() {
     setState(() {
       currentDate = currentDate.subtract(const Duration(days: 1));
@@ -89,6 +105,7 @@ class ReservationsState extends State<Reservations> {
     });
   }
 
+  // Navigate to the next day and update selected reservation
   void _nextDay() {
     setState(() {
       currentDate = currentDate.add(const Duration(days: 1));
@@ -96,7 +113,9 @@ class ReservationsState extends State<Reservations> {
     });
   }
 
+  // Update the selected reservation based on the current date
   void _updateSelectedReservation() {
+    // Filter reservations to only those on the current date
     final currentDayReservations =
       reservations
         .where(
@@ -107,6 +126,7 @@ class ReservationsState extends State<Reservations> {
         )
         .toList();
 
+    // Set the first reservation of the day as selected, or null if none exist
     if (currentDayReservations.isNotEmpty) {
       selectedReservation = currentDayReservations.first;
     } else {
@@ -114,6 +134,7 @@ class ReservationsState extends State<Reservations> {
     }
   }
 
+  // Show confirmation dialog before deleting a reservation
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -154,6 +175,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Populate the edit form with the selected reservation's data
   void _editReservation() {
     if (selectedReservation == null) return;
 
@@ -178,6 +200,7 @@ class ReservationsState extends State<Reservations> {
     });
   }
 
+  // Delete the selected reservation from Firestore
   Future<void> _deleteReservation() async {
     if (selectedReservation == null) return;
 
@@ -197,6 +220,7 @@ class ReservationsState extends State<Reservations> {
     }
   }
 
+  // Save or update a reservation to Firestore
   Future<void> _saveReservation() async {
     if (selectedDate == null || selectedTime == null || selectedTable == null) {
       return;
@@ -217,19 +241,19 @@ class ReservationsState extends State<Reservations> {
       final endDateTime = startDateTime.add(const Duration(hours: 2));
 
       await FirebaseFirestore.instance
-        .collection('Reservations')
-        .doc('reservation_$timestamp')
-        .set({
-          'id': timestamp,
-          'customerName': '${firstNameController.text} ${surnameController.text}'.trim(),
-          'tableNumber': int.parse(selectedTable!),
-          'startTime': Timestamp.fromDate(startDateTime),
-          'endTime': Timestamp.fromDate(endDateTime),
-          'partySize': int.parse(guestsController.text),
-          'seated': isEditing ? (tempSeated ?? false) : false,
-          'isFinished': isEditing ? (tempFinished ?? false) : false,
-          'specialNotes': specialNotesController.text,
-        });
+          .collection('Reservations')
+          .doc('reservation_$timestamp')
+          .set({
+            'id': timestamp,
+            'customerName': '${firstNameController.text} ${surnameController.text}'.trim(),
+            'tableNumber': int.parse(selectedTable!),
+            'startTime': Timestamp.fromDate(startDateTime),
+            'endTime': Timestamp.fromDate(endDateTime),
+            'partySize': int.parse(guestsController.text),
+            'seated': isEditing ? (tempSeated ?? false) : false,
+            'isFinished': isEditing ? (tempFinished ?? false) : false,
+            'specialNotes': specialNotesController.text,
+          });
 
       setState(() {
         showOverlay = false;
@@ -249,6 +273,7 @@ class ReservationsState extends State<Reservations> {
     }
   }
 
+  // Show confirmation dialog before marking reservation as finished
   void _showFinishConfirmation() {
     showDialog(
       context: context,
@@ -289,6 +314,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Update the status (seated/finished) of the selected reservation
   Future<void> _updateReservationStatus({
     bool? seated,
     bool? isFinished,
@@ -311,6 +337,7 @@ class ReservationsState extends State<Reservations> {
     }
   }
 
+  // Show menu options to revert reservation status (back to waiting or seated)
   void _showStatusMenu(BuildContext context) {
     showDialog(
       context: context,
@@ -339,6 +366,8 @@ class ReservationsState extends State<Reservations> {
                     Navigator.pop(context);
                     _updateReservationStatus(seated: false, isFinished: false);
                   },
+                  selectedColor: Colors.orange.shade400,
+                  tileColor: const Color(0xFF3E3F41),
                 ),
               if (selectedReservation!.isFinished)
                 ListTile(
@@ -354,6 +383,8 @@ class ReservationsState extends State<Reservations> {
                     Navigator.pop(context);
                     _updateReservationStatus(seated: true, isFinished: false);
                   },
+                  selectedColor: Colors.green.shade400,
+                  tileColor: const Color(0xFF3E3F41),
                 ),
             ],
           ),
@@ -363,6 +394,7 @@ class ReservationsState extends State<Reservations> {
   }
 
   @override
+  // Clean up controllers when the widget is disposed
   void dispose() {
     firstNameController.dispose();
     surnameController.dispose();
@@ -372,6 +404,7 @@ class ReservationsState extends State<Reservations> {
   }
 
   @override
+  // Build the main UI layout with sidebar and calendar view
   Widget build(BuildContext context) {
     return Stack(
       children: [
@@ -626,8 +659,8 @@ class ReservationsState extends State<Reservations> {
                             ChoiceChip(
                               label: const Text('Seated'),
                               selected:
-                                  (tempSeated ?? false) &&
-                                  !(tempFinished ?? false),
+                                (tempSeated ?? false) &&
+                                !(tempFinished ?? false),
                               onSelected: (_) {
                                 setState(() {
                                   tempSeated = true;
@@ -714,27 +747,22 @@ class ReservationsState extends State<Reservations> {
                           ElevatedButton(
                             onPressed: () {
                               if (firstNameController.text.isEmpty ||
-                                  surnameController.text.isEmpty ||
-                                  guestsController.text.isEmpty ||
-                                  selectedDate == null ||
-                                  selectedTime == null ||
-                                  selectedTable == null) {
-                                return;
+                                surnameController.text.isEmpty ||
+                                guestsController.text.isEmpty ||
+                                selectedDate == null ||
+                                selectedTime == null ||
+                                selectedTable == null) {
+                                  return;
                               }
                               _saveReservation();
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor:
                                 isEditing
-                                  ? Colors
-                                    .blue
-                                    .shade400
+                                  ? Colors.blue.shade400
                                   : Colors.white,
                               foregroundColor:
-                                isEditing
-                                  ? Colors
-                                    .white
-                                  : Colors.black,
+                                isEditing ? Colors.white : Colors.black,
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 24,
                                 vertical: 12,
@@ -759,6 +787,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Build the calendar view with date navigation and table timeline
   Widget _buildCalendarView() {
     final DateTime previousDate = currentDate.subtract(const Duration(days: 1));
     final DateTime nextDate = currentDate.add(const Duration(days: 1));
@@ -979,6 +1008,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Create a time label widget for the calendar header
   Widget _buildTimeLabel(String time) {
     return Text(
       time,
@@ -990,6 +1020,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Build a table row with table number, capacity, and reservation timeline
   Widget _buildTableRow(int tableNumber, double timeSlotWidth) {
     String tableCapacity;
     switch (tableNumber) {
@@ -1070,6 +1101,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Build reservation blocks positioned on the timeline for a specific table
   List<Widget> _buildReservationsForTable(
     int tableNumber,
     double timeSlotWidth,
@@ -1083,8 +1115,7 @@ class ReservationsState extends State<Reservations> {
             res.startTime.year == currentDate.year &&
             res.startTime.month == currentDate.month &&
             res.startTime.day == currentDate.day,
-        )
-        .toList();
+        ).toList();
 
     final double timelineStart = 12.75;
     final double pixelsPerHour = timeSlotWidth;
@@ -1103,9 +1134,9 @@ class ReservationsState extends State<Reservations> {
 
     for (var reservation in tableReservations) {
       final double startHour =
-          reservation.startTime.hour + reservation.startTime.minute / 60.0;
+        reservation.startTime.hour + reservation.startTime.minute / 60.0;
       final double endHour =
-          reservation.endTime.hour + reservation.endTime.minute / 60.0;
+        reservation.endTime.hour + reservation.endTime.minute / 60.0;
 
       final double left = ((startHour - timelineStart) * pixelsPerHour);
       final double width = ((endHour - startHour) * pixelsPerHour);
@@ -1189,6 +1220,7 @@ class ReservationsState extends State<Reservations> {
     return reservationWidgets;
   }
 
+  // Build the reservation information box in the sidebar
   Widget reservationInfoBox() {
     if (selectedReservation == null) {
       return Container(
@@ -1206,6 +1238,7 @@ class ReservationsState extends State<Reservations> {
       );
     }
 
+    // Format time from 24-hour to 12-hour format
     String formatTime(DateTime time) {
       final hour = time.hour > 12 ? time.hour - 12 : time.hour;
       final minute = time.minute.toString().padLeft(2, '0');
@@ -1477,6 +1510,7 @@ class ReservationsState extends State<Reservations> {
     );
   }
 
+  // Build the status indicator chip with appropriate color and text
   Widget _buildStatusIndicator() {
     Color statusColor =
       selectedReservation!.isFinished

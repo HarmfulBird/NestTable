@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Data model class representing a menu item in the restaurant app
+// Contains all necessary information about food/drink items including pricing, availability, and metadata
 class ItemData {
   final String id;
   final String type;
@@ -12,6 +14,7 @@ class ItemData {
   final bool isPopular;
   final int preparationTime;
 
+  // Constructor to create a new ItemData instance with required and optional parameters
   ItemData({
     required this.id,
     required this.type,
@@ -25,6 +28,8 @@ class ItemData {
     this.preparationTime = 15,
   });
 
+  // Factory constructor that creates an ItemData object from a Firestore document
+  // Handles data type conversion and provides default values for missing fields
   factory ItemData.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ItemData(
@@ -41,6 +46,8 @@ class ItemData {
     );
   }
 
+  // Converts the ItemData object to a Map for storing in Firestore
+  // Used when saving data to the database
   Map<String, dynamic> toFirestore() {
     return {
       'type': type,
@@ -55,6 +62,8 @@ class ItemData {
     };
   }
 
+  // Creates a copy of the ItemData object with modified values
+  // Useful for updating specific fields while keeping others unchanged
   ItemData copyWith({
     String? type,
     String? name,
@@ -67,7 +76,7 @@ class ItemData {
     int? preparationTime,
   }) {
     return ItemData(
-      id: this.id,
+      id: this.id, // ID remains the same as it's immutable
       type: type ?? this.type,
       name: name ?? this.name,
       price: price ?? this.price,

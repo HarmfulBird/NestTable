@@ -2,6 +2,7 @@ import 'dart:math'; // For random number generation
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Data model class to represent a staff member
 class StaffData {
   final String id;
   final String firstName;
@@ -18,6 +19,7 @@ class StaffData {
   });
 }
 
+// Main widget for managing staff data - allows CRUD operations
 class StaffDataUploader extends StatefulWidget {
   const StaffDataUploader({super.key});
 
@@ -26,26 +28,36 @@ class StaffDataUploader extends StatefulWidget {
 }
 
 class StaffDataUploaderState extends State<StaffDataUploader> {
+  // Form validation key
   final _formKey = GlobalKey<FormState>();
+  // Local list to store staff data for display
   final List<StaffData> _staffList = [];
+  // Loading state to show progress indicators
   bool _isLoading = false;
+  // Track if we're editing an existing staff member
   bool _isEditing = false;
+  // Index of the staff member being edited
   int _editingIndex = -1;
 
+  // Text controllers for form input fields
   final _idController = TextEditingController();
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _initialsController = TextEditingController();
 
+  // Available role options for dropdown
   final List<String> _roleOptions = ['User', 'Manager'];
+  // Currently selected role
   String _selectedRole = 'User';
 
+  // Initialize the widget and load existing staff data
   @override
   void initState() {
     super.initState();
     _fetchExistingStaff();
   }
 
+  // Clean up text controllers when widget is destroyed
   @override
   void dispose() {
     _idController.dispose();
@@ -55,34 +67,40 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     super.dispose();
   }
 
+  // Load all staff members from Firebase and display them
   void _fetchExistingStaff() async {
+    // Set loading state to show spinner
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Query Firebase for all staff documents, ordered by ID
       final staffSnapshot =
-          await FirebaseFirestore.instance
-              .collection('Staff')
-              .orderBy('id')
-              .get();
+        await FirebaseFirestore.instance
+          .collection('Staff')
+          .orderBy('id')
+          .get();
 
+      // Convert Firestore documents to StaffData objects
       final List<StaffData> fetchedStaff =
-          staffSnapshot.docs.map((doc) {
-            final data = doc.data();
-            String userRole = (data['role'] as String?) ?? 'User';
-            if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
-              userRole = 'User';
-            }
-            return StaffData(
-              id: data['id'] ?? '',
-              firstName: data['firstName'] ?? '',
-              lastName: data['lastName'] ?? '',
-              initials: data['initials'] ?? '',
-              role: userRole,
-            );
-          }).toList();
+        staffSnapshot.docs.map((doc) {
+          final data = doc.data();
+          // Validate and default the role field
+          String userRole = (data['role'] as String?) ?? 'User';
+          if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
+            userRole = 'User';
+          }
+          return StaffData(
+            id: data['id'] ?? '',
+            firstName: data['firstName'] ?? '',
+            lastName: data['lastName'] ?? '',
+            initials: data['initials'] ?? '',
+            role: userRole,
+          );
+        }).toList();
 
+      // Update UI with fetched data
       setState(() {
         _staffList
           ..clear()
@@ -90,6 +108,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         _isLoading = false;
       });
     } catch (e) {
+      // Handle errors during data fetching
       setState(() {
         _isLoading = false;
       });
@@ -97,6 +116,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     }
   }
 
+  // Clear all form fields and reset editing state
   void _resetForm() {
     _idController.clear();
     _firstNameController.clear();
@@ -107,13 +127,16 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     _editingIndex = -1;
   }
 
+  // Display a message to the user at the bottom of the screen
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  // Automatically create initials from first and last name
   void _generateInitials() {
+    // Only generate if both names are provided
     if (_firstNameController.text.isNotEmpty &&
         _lastNameController.text.isNotEmpty) {
       final firstInitial = _firstNameController.text[0].toUpperCase();
@@ -124,15 +147,19 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     }
   }
 
+  // Create a random 6-digit ID number
   void _generateRandomId() {
     final random = Random();
+    // Generate number between 100000 and 999999
     final id = (random.nextInt(900000) + 100000).toString();
     setState(() {
       _idController.text = id;
     });
   }
 
+  // Save a new staff member or update an existing one to Firebase
   Future<void> _saveStaff() async {
+    // Validate form before proceeding
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -142,11 +169,13 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     });
 
     try {
+      // Get values from form controllers
       final id = _idController.text;
       final firstName = _firstNameController.text;
       final lastName = _lastNameController.text;
       final initials = _initialsController.text;
 
+      // Create StaffData object
       final staffData = StaffData(
         id: id,
         firstName: firstName,
@@ -155,6 +184,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         role: _selectedRole,
       );
 
+      // Save to Firebase using document ID as the staff ID
       await FirebaseFirestore.instance.collection('Staff').doc(id).set({
         'id': id,
         'firstName': firstName,
@@ -163,19 +193,23 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         'role': _selectedRole,
       });
 
+      // Update local list based on whether we're editing or adding
       if (_isEditing &&
-          _editingIndex >= 0 &&
-          _editingIndex < _staffList.length) {
+        _editingIndex >= 0 &&
+        _editingIndex < _staffList.length) {
+        // Update existing staff member
         setState(() {
           _staffList[_editingIndex] = staffData;
         });
       } else {
+        // Add new staff member and sort by ID
         setState(() {
           _staffList.add(staffData);
           _staffList.sort((a, b) => a.id.compareTo(b.id));
         });
       }
 
+      // Clear form and show success message
       _resetForm();
       _showSnackBar('Staff member saved successfully!');
     } catch (e) {
@@ -187,14 +221,17 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     }
   }
 
+  // Remove a staff member from Firebase and the local list
   Future<void> _deleteStaff(String id) async {
     setState(() {
       _isLoading = true;
     });
 
     try {
+      // Delete from Firebase
       await FirebaseFirestore.instance.collection('Staff').doc(id).delete();
 
+      // Remove from local list
       setState(() {
         _staffList.removeWhere((staff) => staff.id == id);
       });
@@ -209,10 +246,12 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     }
   }
 
+  // Load staff data into the form for editing
   void _editStaff(StaffData staff, int index) {
     setState(() {
       _isEditing = true;
       _editingIndex = index;
+      // Populate form fields with existing data
       _idController.text = staff.id;
       _firstNameController.text = staff.firstName;
       _lastNameController.text = staff.lastName;
@@ -221,41 +260,25 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     });
   }
 
+  // Build the user interface for the staff data uploader page
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF212224),
-      appBar: AppBar(
-        title: Text(
-          _isEditing ? 'Edit Staff Member' : 'Add Staff Member',
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF2F3031),
-        actions: [
-          if (_isEditing)
-            IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.white),
-              onPressed: _resetForm,
-              tooltip: 'Cancel Editing',
-            ),
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _fetchExistingStaff,
-            tooltip: 'Refresh Staff List',
-          ),
-        ],
-      ),
-      body:
+    return Container(
+      color: const Color(0xFF212224),
+      child:
         _isLoading
-          ? const Center(
+          ? // Show loading spinner when data is being processed
+          const Center(
             child: CircularProgressIndicator(color: Colors.deepPurple),
           )
-          : SingleChildScrollView(
+          : // Main content when not loading
+          SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Form card for adding/editing staff
                   Card(
                     color: const Color(0xFF2F3031),
                     child: Padding(
@@ -265,6 +288,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Dynamic title based on edit mode
                             Text(
                               _isEditing
                                 ? 'Edit Staff Member'
@@ -276,12 +300,14 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                               ),
                             ),
                             const SizedBox(height: 16),
+                            // Row for ID field with random generator and role dropdown
                             Row(
                               children: [
                                 Expanded(
                                   flex: 2,
                                   child: Row(
                                     children: [
+                                      // ID input field
                                       Expanded(
                                         child: TextFormField(
                                           controller: _idController,
@@ -293,10 +319,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                             enabledBorder:
                                               OutlineInputBorder(
                                                 borderSide: BorderSide(
-                                                  color:
-                                                    Colors
-                                                      .grey
-                                                      .shade700,
+                                                  color:Colors.grey.shade700,
                                                 ),
                                               ),
                                             focusedBorder:
@@ -309,17 +332,16 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                           style: const TextStyle(
                                             color: Colors.white,
                                           ),
+                                          // Disable editing when updating existing staff
                                           enabled: !_isEditing,
-                                          keyboardType:
-                                            TextInputType.number,
+                                          keyboardType: TextInputType.number,
                                           validator: (value) {
                                             if (value == null ||
-                                                value.isEmpty) {
+                                              value.isEmpty) {
                                               return 'Please enter staff ID';
                                             }
-                                            if (!RegExp(
-                                              r'^\d{6}$',
-                                            ).hasMatch(value)) {
+                                            // Validate 6-digit format
+                                            if (!RegExp(r'^\d{6}$',).hasMatch(value)) {
                                               return 'ID must be exactly 6 digits';
                                             }
                                             return null;
@@ -327,6 +349,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
+                                      // Random ID generator button
                                       ElevatedButton(
                                         onPressed:
                                           _isEditing
@@ -349,6 +372,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
+                                // Role dropdown
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
                                     decoration: InputDecoration(
@@ -407,8 +431,10 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                               ],
                             ),
                             const SizedBox(height: 16),
+                            // Row for first and last name fields
                             Row(
                               children: [
+                                // First name field
                                 Expanded(
                                   child: TextFormField(
                                     controller: _firstNameController,
@@ -432,6 +458,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                     ),
+                                    // Auto-generate initials when typing
                                     onChanged: (_) => _generateInitials(),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -442,6 +469,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                   ),
                                 ),
                                 const SizedBox(width: 16),
+                                // Last name field
                                 Expanded(
                                   child: TextFormField(
                                     controller: _lastNameController,
@@ -465,6 +493,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                     ),
+                                    // Auto-generate initials when typing
                                     onChanged: (_) => _generateInitials(),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
@@ -477,6 +506,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                               ],
                             ),
                             const SizedBox(height: 16),
+                            // Initials field with auto-generation info
                             TextFormField(
                               controller: _initialsController,
                               decoration: InputDecoration(
@@ -509,6 +539,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                               },
                             ),
                             const SizedBox(height: 24),
+                            // Submit button with dynamic text
                             ElevatedButton(
                               onPressed: _saveStaff,
                               style: ElevatedButton.styleFrom(
@@ -534,6 +565,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // Card displaying list of current staff members
                   Card(
                     color: const Color(0xFF2F3031),
                     child: Padding(
@@ -551,7 +583,8 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                           ),
                           const SizedBox(height: 16),
                           _staffList.isEmpty
-                            ? const Center(
+                            ? // Show message when no staff members exist
+                            const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(16.0),
                                 child: Text(
@@ -560,7 +593,8 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                 ),
                               ),
                             )
-                            : ListView.builder(
+                            : // Build list of staff member cards
+                            ListView.builder(
                               shrinkWrap: true,
                               physics:
                                 const NeverScrollableScrollPhysics(),
@@ -573,6 +607,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                   ),
                                   color: const Color(0xFF212224),
                                   child: ListTile(
+                                    // Avatar showing staff initials
                                     leading: CircleAvatar(
                                       backgroundColor: Colors.deepPurple,
                                       child: Text(
@@ -582,6 +617,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                         ),
                                       ),
                                     ),
+                                    // Staff member name
                                     title: Text(
                                       '${staff.firstName} ${staff.lastName}',
                                       style: const TextStyle(
@@ -589,6 +625,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
+                                    // Staff ID and role information
                                     subtitle: Column(
                                       crossAxisAlignment:
                                         CrossAxisAlignment.start,
@@ -607,25 +644,30 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                         ),
                                       ],
                                     ),
+                                    // Edit and delete action buttons
                                     trailing: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
+                                        // Edit button
                                         IconButton(
                                           icon: const Icon(
                                             Icons.edit,
                                             color: Colors.white,
                                           ),
                                           onPressed:
-                                            () => _editStaff(staff, index,),
+                                            () => _editStaff(
+                                              staff,
+                                              index,
+                                            ),
                                         ),
+                                        // Delete button
                                         IconButton(
                                           icon: const Icon(
                                             Icons.delete,
                                             color: Colors.white,
                                           ),
                                           onPressed:
-                                            () =>
-                                              _deleteStaff(staff.id),
+                                            () => _deleteStaff(staff.id),
                                         ),
                                       ],
                                     ),

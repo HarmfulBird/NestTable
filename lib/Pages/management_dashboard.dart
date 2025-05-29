@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../Services/analytics_service.dart';
 import 'DataUploaders/uploader_selector.dart';
 
+// Main dashboard widget for restaurant management analytics
+// Provides daily, weekly, and monthly insights with real-time data
 class ManagementDashboard extends StatefulWidget {
   const ManagementDashboard({super.key});
 
@@ -10,14 +12,15 @@ class ManagementDashboard extends StatefulWidget {
   ManagementDashboardState createState() => ManagementDashboardState();
 }
 
+// State class managing dashboard data, tabs, and UI interactions
 class ManagementDashboardState extends State<ManagementDashboard>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   String selectedPeriod = 'Daily';
   Map<String, dynamic> currentStats = {};
   bool isLoading = true;
-
   @override
+  // Initializes the tab controller and loads initial statistics data
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
@@ -33,18 +36,22 @@ class ManagementDashboardState extends State<ManagementDashboard>
   }
 
   @override
+  // Cleans up the tab controller when widget is destroyed
   void dispose() {
     _tabController.dispose();
     super.dispose();
   }
 
+  // Loads analytics statistics based on the selected time period
   Future<void> _loadStats() async {
+    // Set loading state to show progress indicator
     setState(() {
       isLoading = true;
     });
 
     try {
       Map<String, dynamic> stats;
+      // Fetch appropriate statistics based on selected period
       switch (selectedPeriod) {
         case 'Daily':
           stats = await AnalyticsService.getDailyStats();
@@ -59,11 +66,13 @@ class ManagementDashboardState extends State<ManagementDashboard>
           stats = await AnalyticsService.getDailyStats();
       }
 
+      // Update state with fetched data and stop loading
       setState(() {
         currentStats = stats;
         isLoading = false;
       });
     } catch (e) {
+      // Handle errors by storing error message and stopping loading
       setState(() {
         currentStats = {'error': 'Failed to load stats: $e'};
         isLoading = false;
@@ -73,41 +82,54 @@ class ManagementDashboardState extends State<ManagementDashboard>
 
   @override
   Widget build(BuildContext context) {
+    // Main scaffold providing the dashboard structure with tabs and content
     return Scaffold(
       backgroundColor: const Color(0xFF212224),
       appBar: AppBar(
-        title: const Text(
-          'Management Dashboard',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),        
-        backgroundColor: const Color(0xFF2F3031),
-        actions: [
-          TextButton.icon(
-            onPressed: _loadStats,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            label: const Text(
-              'Refresh Data',
-              style: TextStyle(color: Colors.white),
+        title: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: const Text(
+            'Management Dashboard',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
             ),
           ),
-          TextButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PageSelector()),
-              );
-            },
-            icon: const Icon(Icons.upload, color: Colors.white),
-            label: const Text(
-              'Data Management',
-              style: TextStyle(color: Colors.white),
+        ),
+        backgroundColor: const Color(0xFF2F3031),
+        // Action buttons for refreshing data and navigating to data management
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: TextButton.icon(
+              onPressed: _loadStats,
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              label: const Text(
+                'Refresh Data',
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: TextButton.icon(
+              onPressed: () {
+                // Navigate to data management/upload page
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PageSelector()),
+                );
+              },
+              icon: const Icon(Icons.upload, color: Colors.white),
+              label: const Text(
+                'Data Management',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           ),
         ],
+        // Tab bar for switching between Daily, Weekly, and Monthly views
         bottom: TabBar(
           controller: _tabController,
           labelColor: Colors.white,
@@ -120,24 +142,26 @@ class ManagementDashboardState extends State<ManagementDashboard>
           ],
         ),
       ),
+      // Conditional body rendering based on loading state and data availability
       body:
-        isLoading
-          ? const Center(
-            child: CircularProgressIndicator(color: Colors.deepPurple),
-          )
-          : currentStats.containsKey('error')
-          ? _buildErrorWidget()
-          : TabBarView(
-            controller: _tabController,
-            children: [
-              _buildDashboardContent('Daily'),
-              _buildDashboardContent('Weekly'),
-              _buildDashboardContent('Monthly'),
-            ],
-          ),
+          isLoading
+              ? const Center(
+                child: CircularProgressIndicator(color: Colors.deepPurple),
+              )
+              : currentStats.containsKey('error')
+              ? _buildErrorWidget()
+              : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildDashboardContent('Daily'),
+                  _buildDashboardContent('Weekly'),
+                  _buildDashboardContent('Monthly'),
+                ],
+              ),
     );
   }
 
+  // Builds an error display widget when data loading fails
   Widget _buildErrorWidget() {
     return Center(
       child: Column(
@@ -177,6 +201,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds the main dashboard content with refreshable sections and widgets
   Widget _buildDashboardContent(String period) {
     return RefreshIndicator(
       onRefresh: _loadStats,
@@ -188,11 +213,15 @@ class ManagementDashboardState extends State<ManagementDashboard>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with period title and revenue information
             _buildHeaderSection(period),
             const SizedBox(height: 20),
+            // Grid of key performance metrics
             _buildQuickStatsGrid(),
             const SizedBox(height: 20),
-            _buildRealTimeSection(),            const SizedBox(height: 20),
+            // Real-time data streams for tables and orders
+            _buildRealTimeSection(), const SizedBox(height: 20),
+            // Period-specific widgets for additional insights
             if (period == 'Weekly') _buildWeeklySpecificWidgets(),
             if (period == 'Monthly') _buildMonthlySpecificWidgets(),
           ],
@@ -201,15 +230,18 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds the header section with period title, date range, and revenue summary
   Widget _buildHeaderSection(String period) {
     final now = DateTime.now();
     String dateRange;
 
+    // Calculate appropriate date range based on selected period
     switch (period) {
       case 'Daily':
         dateRange = DateFormat('EEEE, MMMM d, y').format(now);
         break;
       case 'Weekly':
+        // Calculate start of current week (Monday) and end (Sunday)
         final weekStart = now.subtract(Duration(days: now.weekday - 1));
         final weekEnd = weekStart.add(const Duration(days: 6));
         dateRange =
@@ -222,6 +254,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
         dateRange = DateFormat('MMMM d, y').format(now);
     }
 
+    // Return styled header container with gradient background
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -236,6 +269,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Period title (Daily/Weekly/Monthly Report)
           Text(
             '$period Report',
             style: const TextStyle(
@@ -245,11 +279,13 @@ class ManagementDashboardState extends State<ManagementDashboard>
             ),
           ),
           const SizedBox(height: 8),
+          // Formatted date range for the selected period
           Text(
             dateRange,
             style: const TextStyle(color: Colors.white70, fontSize: 16),
           ),
           const SizedBox(height: 16),
+          // Revenue display with trending icon
           Row(
             children: [
               Icon(Icons.trending_up, color: Colors.white70, size: 20),
@@ -269,6 +305,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds a grid of quick statistics cards showing key metrics
   Widget _buildQuickStatsGrid() {
     return GridView.count(
       crossAxisCount: 2,
@@ -278,24 +315,28 @@ class ManagementDashboardState extends State<ManagementDashboard>
       mainAxisSpacing: 16,
       crossAxisSpacing: 16,
       children: [
+        // Total orders statistic card
         _buildStatCard(
           'Orders',
           (currentStats['totalOrders'] ?? 0).toString(),
           Icons.receipt_long,
           Colors.blue,
         ),
+        // Total reservations statistic card
         _buildStatCard(
           'Reservations',
           (currentStats['totalReservations'] ?? 0).toString(),
           Icons.event_seat,
           Colors.green,
         ),
+        // Average order value statistic card
         _buildStatCard(
           'Avg Order Value',
           '\$${(currentStats['averageOrderValue'] ?? 0.0).toStringAsFixed(2)}',
           Icons.attach_money,
           Colors.orange,
         ),
+        // Table occupancy percentage statistic card
         _buildStatCard(
           'Table Occupancy',
           '${(currentStats['tableOccupancy'] ?? 0.0).toStringAsFixed(1)}%',
@@ -306,6 +347,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds an individual statistic card with title, value, icon, and color
   Widget _buildStatCard(
     String title,
     String value,
@@ -323,6 +365,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // Top row with title and icon
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -337,6 +380,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
               Icon(icon, color: color, size: 42),
             ],
           ),
+          // Large value display with accent color
           Text(
             value,
             style: TextStyle(
@@ -350,6 +394,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds real-time status section with live table and order data streams
   Widget _buildRealTimeSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -365,6 +410,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
         const SizedBox(height: 12),
         Row(
           children: [
+            // Table status card with live data stream
             Expanded(
               child: _buildRealTimeCard(
                 'Table Status',
@@ -411,6 +457,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
               ),
             ),
             const SizedBox(width: 16),
+            // Active orders card with live data stream
             Expanded(
               child: _buildRealTimeCard(
                 'Active Orders',
@@ -462,6 +509,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds a real-time data card with streaming content
   Widget _buildRealTimeCard(
     String title,
     Widget content,
@@ -491,7 +539,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
                 ),
               ),
             ],
-          ),          
+          ),
           const SizedBox(height: 8),
           content,
         ],
@@ -499,6 +547,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds weekly-specific widgets including staff performance data
   Widget _buildWeeklySpecificWidgets() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -533,27 +582,27 @@ class ManagementDashboardState extends State<ManagementDashboard>
               const SizedBox(height: 12),
               if (currentStats['staffPerformance'] != null)
                 ...(currentStats['staffPerformance'] as Map<String, int>)
-                  .entries
-                  .take(5)
-                  .map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            entry.key,
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          Text(
-                            '${entry.value} orders',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
+                    .entries
+                    .take(5)
+                    .map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              entry.key,
+                              style: const TextStyle(color: Colors.white70),
+                            ),
+                            Text(
+                              '${entry.value} orders',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList()
+                    )
+                    .toList()
               else
                 const Text(
                   'No staff performance data available',
@@ -567,6 +616,7 @@ class ManagementDashboardState extends State<ManagementDashboard>
     );
   }
 
+  // Builds monthly-specific widgets including popular menu items data
   Widget _buildMonthlySpecificWidgets() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -601,29 +651,29 @@ class ManagementDashboardState extends State<ManagementDashboard>
               const SizedBox(height: 12),
               if (currentStats['popularItems'] != null)
                 ...(currentStats['popularItems'] as List<MapEntry<String, int>>)
-                  .take(5)
-                  .map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: const TextStyle(color: Colors.white70),
-                              overflow: TextOverflow.ellipsis,
+                    .take(5)
+                    .map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                entry.key,
+                                style: const TextStyle(color: Colors.white70),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '${entry.value} orders',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ],
+                            Text(
+                              '${entry.value} orders',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList()
+                    )
+                    .toList()
               else
                 const Text(
                   'No menu item data available',
@@ -636,6 +686,8 @@ class ManagementDashboardState extends State<ManagementDashboard>
       ],
     );
   }
+
+  // Builds action buttons section with live revenue display
   Widget _buildActionButtons() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

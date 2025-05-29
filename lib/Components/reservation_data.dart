@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// Represents a restaurant table reservation with all necessary details
+// This class serves as a data model for managing restaurant reservations
 class ReservationData {
   final int id;
   final String customerName;
@@ -12,6 +14,8 @@ class ReservationData {
   final Color color;
   final String specialNotes;
 
+  // Constructor for creating a new ReservationData instance
+  // Requires all essential reservation information
   ReservationData({
     required this.id,
     required this.customerName,

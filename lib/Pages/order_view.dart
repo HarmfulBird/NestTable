@@ -4,6 +4,8 @@ import '../Components/datetime.dart';
 import '../Components/order_data.dart';
 import '../Components/itemdata.dart';
 
+// Main order view widget for restaurant staff to manage table orders
+// Displays seated tables, menu items by category, and current orders
 class OrderView extends StatefulWidget {
   const OrderView({super.key});
 
@@ -11,6 +13,7 @@ class OrderView extends StatefulWidget {
   State<OrderView> createState() => _OrderViewState();
 }
 
+// State class managing order view functionality and real-time data updates
 class _OrderViewState extends State<OrderView> {
   String? selectedTableId;
   String? selectedCategory = 'All';
@@ -20,6 +23,7 @@ class _OrderViewState extends State<OrderView> {
   List<ItemData> menuItems = [];
 
   @override
+  // Initialize page data and set up real-time listeners for database changes
   void initState() {
     super.initState();
     _fetchCategories();
@@ -28,6 +32,7 @@ class _OrderViewState extends State<OrderView> {
     _listenToOrders();
   }
 
+  // Fetch all unique menu categories from Firestore to populate filter buttons
   void _fetchCategories() async {
     final snapshot = await FirebaseFirestore.instance.collection('Items').get();
     final Set<String> uniqueCategories = {'All'};
@@ -39,20 +44,21 @@ class _OrderViewState extends State<OrderView> {
     });
   }
 
+  // Set up real-time listener for available menu items from Firestore
   void _fetchMenuItems() {
     FirebaseFirestore.instance
       .collection('Items')
       .where('isAvailable', isEqualTo: true)
       .snapshots()
       .listen((snapshot) {
-        final items =
-            snapshot.docs.map((doc) => ItemData.fromFirestore(doc)).toList();
+        final items = snapshot.docs.map((doc) => ItemData.fromFirestore(doc)).toList();
         setState(() {
           menuItems = items;
         });
       });
   }
 
+  // Listen for changes to seated tables and automatically select the first available table
   void _listenToTables() {
     FirebaseFirestore.instance
       .collection('Tables')
@@ -61,6 +67,7 @@ class _OrderViewState extends State<OrderView> {
       .listen((snapshot) async {
         if (mounted) {
           setState(() {
+            // Auto-select first table if none selected
             if (selectedTableId == null && snapshot.docs.isNotEmpty) {
               selectedTableId = snapshot.docs.first.id;
             } else if (snapshot.docs.isEmpty) {
@@ -72,41 +79,44 @@ class _OrderViewState extends State<OrderView> {
       });
   }
 
+  // Listen for real-time order updates and sync with currently selected table
   void _listenToOrders() {
     FirebaseFirestore.instance
-      .collection('Orders')
-      .where('status', whereIn: ['pending', 'in-progress'])
-      .snapshots()
-      .listen((snapshot) {
-        if (selectedTableId != null) {
-          final tableNumber = int.parse(selectedTableId!.split('_').last);
-          List<OrderItem> tableOrders = [];
+        .collection('Orders')
+        .where('status', whereIn: ['pending', 'in-progress'])
+        .snapshots()
+        .listen((snapshot) {
+          if (selectedTableId != null) {
+            final tableNumber = int.parse(selectedTableId!.split('_').last);
+            List<OrderItem> tableOrders = [];
 
-          for (var doc in snapshot.docs) {
-            final data = doc.data();
-            if (data['tableNumber'] == tableNumber) {
-              final items = data['items'] as List<dynamic>;
-              tableOrders =
-                items
-                  .map(
+            // Find orders for the selected table
+            for (var doc in snapshot.docs) {
+              final data = doc.data();
+              if (data['tableNumber'] == tableNumber) {
+                final items = data['items'] as List<dynamic>;
+                tableOrders =
+                  items.map(
                     (item) =>
-                        OrderItem.fromMap(item as Map<String, dynamic>),
-                  )
-                  .toList();
-              break;
+                      OrderItem.fromMap(item as Map<String, dynamic>),
+                  ).toList();
+                break;
+              }
+            }
+
+            if (mounted) {
+              setState(() {
+                currentOrder = tableOrders;
+              });
             }
           }
-
-          if (mounted) {
-            setState(() {
-              currentOrder = tableOrders;
-            });
-          }
-        }
-      });
+        });
   }
 
+  // Add a menu item to the current order for the selected table
+  // Creates new order if none exists, or updates existing order
   void _addItemToOrder(ItemData item) async {
+    // Validate table selection
     if (selectedTableId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a table first')),
@@ -115,6 +125,7 @@ class _OrderViewState extends State<OrderView> {
     }
 
     final tableNumber = int.parse(selectedTableId!.split('_').last);
+    // Create new order item with default quantity and empty notes
     final orderItem = OrderItem(
       name: item.name,
       quantity: 1,
@@ -123,6 +134,7 @@ class _OrderViewState extends State<OrderView> {
     );
 
     try {
+      // Check if there's already an existing order for this table
       final existingOrderSnapshot =
         await FirebaseFirestore.instance
           .collection('Orders')
@@ -131,15 +143,15 @@ class _OrderViewState extends State<OrderView> {
           .get();
 
       if (existingOrderSnapshot.docs.isNotEmpty) {
+        // Update existing order with new item
         final existingOrder = existingOrderSnapshot.docs.first;
         final existingItems = List<Map<String, dynamic>>.from(
           existingOrder.data()['items'] ?? [],
         );
         existingItems.add(orderItem.toMap());
+        // Recalculate total amount
         final totalAmount = existingItems.fold<double>(
-          0,
-          (sum, item) =>
-              sum + ((item['price'] ?? 0.0) * (item['quantity'] ?? 1)),
+          0, (sum, item) => sum + ((item['price'] ?? 0.0) * (item['quantity'] ?? 1)),
         );
 
         await existingOrder.reference.update({
@@ -147,6 +159,7 @@ class _OrderViewState extends State<OrderView> {
           'totalAmount': totalAmount,
         });
       } else {
+        // Create new order document
         final orderData = {
           'tableNumber': tableNumber,
           'items': [orderItem.toMap()],
@@ -159,15 +172,18 @@ class _OrderViewState extends State<OrderView> {
         await FirebaseFirestore.instance.collection('Orders').add(orderData);
       }
     } catch (e) {
+      // Show error message if operation fails
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error adding item: $e')));
     }
   }
 
+  // Remove an item from the current order or cancel the entire order if it becomes empty
   void _removeOrderItem(int index) async {
     try {
       final tableNumber = int.parse(selectedTableId!.split('_').last);
+      // Find the current order for the table
       final orderSnapshot =
         await FirebaseFirestore.instance
           .collection('Orders')
@@ -182,11 +198,10 @@ class _OrderViewState extends State<OrderView> {
         );
 
         if (items.length > 1) {
+          // Remove specific item and update total
           items.removeAt(index);
           final totalAmount = items.fold<double>(
-            0,
-            (sum, item) =>
-              sum + ((item['price'] ?? 0.0) * (item['quantity'] ?? 1)),
+            0, (sum, item) => sum + ((item['price'] ?? 0.0) * (item['quantity'] ?? 1)),
           );
 
           await orderDoc.reference.update({
@@ -194,18 +209,22 @@ class _OrderViewState extends State<OrderView> {
             'totalAmount': totalAmount,
           });
         } else {
+          // Cancel order if removing the last item
           await orderDoc.reference.update({'status': 'cancelled'});
         }
       }
     } catch (e) {
+      // Show error message if removal fails
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error removing item: $e')));
     }
   }
 
+  // Display a dialog for adding or editing notes for a specific order item
   void _addNoteToItem(int index) {
     final TextEditingController noteController = TextEditingController();
+    // Pre-populate with existing note
     noteController.text = currentOrder[index].notes;
 
     showDialog(
@@ -239,6 +258,7 @@ class _OrderViewState extends State<OrderView> {
                   final tableNumber = int.parse(
                     selectedTableId!.split('_').last,
                   );
+                  // Find the order document to update
                   final querySnapshot =
                     await FirebaseFirestore.instance
                       .collection('Orders')
@@ -254,6 +274,7 @@ class _OrderViewState extends State<OrderView> {
                       orderDoc.data()['items'] ?? [],
                     );
 
+                    // Update the specific item's note
                     if (items.length > index) {
                       items[index]['notes'] = noteController.text;
 
@@ -266,6 +287,7 @@ class _OrderViewState extends State<OrderView> {
 
                   Navigator.pop(context);
                 } catch (e) {
+                  // Show error if note update fails
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error updating note: $e')),
                   );
@@ -284,7 +306,9 @@ class _OrderViewState extends State<OrderView> {
     );
   }
 
+  // Build the order summary widget displaying total price and list of ordered items
   Widget _buildOrderSummary() {
+    // Calculate total price from all items in current order
     double total = currentOrder.fold(0, (sum, item) => sum + item.totalPrice);
 
     return Column(
@@ -319,6 +343,7 @@ class _OrderViewState extends State<OrderView> {
                         '\$${item.totalPrice.toStringAsFixed(2)}',
                         style: const TextStyle(color: Colors.white70),
                       ),
+                      // Show note if it exists
                       if (item.notes.isNotEmpty)
                         Text(
                           'Note: ${item.notes}',
@@ -332,10 +357,12 @@ class _OrderViewState extends State<OrderView> {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Add note button
                       IconButton(
                         icon: const Icon(Icons.note_add, color: Colors.white70),
                         onPressed: () => _addNoteToItem(index),
                       ),
+                      // Remove item button
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _removeOrderItem(index),
@@ -352,18 +379,21 @@ class _OrderViewState extends State<OrderView> {
   }
 
   @override
+  // Build the main UI layout with two-panel design: left panel for orders, right panel for menu
   Widget build(BuildContext context) {
+    // Filter menu items based on selected category
     List<ItemData> filteredItems =
       selectedCategory == 'All'
         ? menuItems
         : menuItems
-            .where((item) => item.category == selectedCategory)
-            .toList();
+          .where((item) => item.category == selectedCategory)
+          .toList();
     return Scaffold(
       resizeToAvoidBottomInset: false,
       backgroundColor: const Color(0xFF212224),
       body: Row(
         children: [
+          // Left panel: Date/time, table selection, and order summary
           Container(
             width: 400,
             padding: const EdgeInsets.all(16),
@@ -371,8 +401,10 @@ class _OrderViewState extends State<OrderView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Date and time display
                 Center(child: const DateTimeBox()),
                 const SizedBox(height: 20),
+                // Active tables section
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -391,6 +423,7 @@ class _OrderViewState extends State<OrderView> {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      // Stream builder for real-time table updates
                       StreamBuilder<QuerySnapshot>(
                         stream:
                           FirebaseFirestore.instance
@@ -414,6 +447,7 @@ class _OrderViewState extends State<OrderView> {
                               ),
                             );
                           }
+                          // Enhance table data with reservation information
                           return FutureBuilder<List<Map<String, dynamic>?>>(
                             future: Future.wait(
                               tables.map((table) async {
@@ -422,6 +456,7 @@ class _OrderViewState extends State<OrderView> {
                                 );
                                 final tableNumber = tableData['tableNumber'];
 
+                                // Get reservation details for the table
                                 final reservationSnapshot =
                                   await FirebaseFirestore.instance
                                     .collection('Reservations')
@@ -435,13 +470,14 @@ class _OrderViewState extends State<OrderView> {
                                     .get();
 
                                 if (reservationSnapshot.docs.isNotEmpty) {
-                                  final reservationData =
-                                    reservationSnapshot.docs.first.data();
+                                  final reservationData = reservationSnapshot.docs.first.data();
 
+                                  // Skip finished reservations
                                   if (reservationData['isFinished'] == true) {
                                     return null;
                                   }
 
+                                  // Add customer information to table data
                                   tableData['customerName'] =
                                     reservationData['customerName'] ??
                                     'No name';
@@ -460,6 +496,7 @@ class _OrderViewState extends State<OrderView> {
                                 return const CircularProgressIndicator();
                               }
 
+                              // Filter out null entries (finished reservations)
                               final enhancedTables =
                                 enhancedSnapshot.data!
                                   .where((item) => item != null)
@@ -480,6 +517,7 @@ class _OrderViewState extends State<OrderView> {
                                 );
                               }
 
+                              // Dropdown for table selection
                               return DropdownButtonFormField<String>(
                                 value: selectedTableId,
                                 dropdownColor: const Color(0xFF2F3031),
@@ -514,9 +552,7 @@ class _OrderViewState extends State<OrderView> {
                                 ),
                                 items:
                                   enhancedTables.map((tableInfo) {
-                                    final data =
-                                      tableInfo['data']
-                                        as Map<String, dynamic>;
+                                    final data = tableInfo['data'] as Map<String, dynamic>;
                                     return DropdownMenuItem<String>(
                                       value: tableInfo['id'] as String,
                                       child: Text(
@@ -532,6 +568,7 @@ class _OrderViewState extends State<OrderView> {
                                   if (value != null) {
                                     setState(() {
                                       selectedTableId = value;
+                                      // Clear current order when switching tables
                                       currentOrder.clear();
                                     });
                                   }
@@ -545,7 +582,7 @@ class _OrderViewState extends State<OrderView> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // Order Summary
+                // Order Summary section
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -567,43 +604,46 @@ class _OrderViewState extends State<OrderView> {
               ],
             ),
           ),
+          // Right panel: Category filters and menu items grid
           Expanded(
             child: Column(
               children: [
+                // Category filter buttons
                 Container(
                   padding: const EdgeInsets.all(16),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children:
-                        categories.map((category) {
-                          final isSelected = selectedCategory == category;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                  isSelected
-                                    ? Colors.deepPurple
-                                    : const Color(0xFF2F3031),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                          categories.map((category) {
+                            final isSelected = selectedCategory == category;
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor:
+                                    isSelected
+                                      ? Colors.deepPurple
+                                      : const Color(0xFF2F3031),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 20,
+                                    vertical: 12,
+                                  ),
                                 ),
+                                onPressed: () {
+                                  setState(() {
+                                    selectedCategory = category;
+                                  });
+                                },
+                                child: Text(category),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  selectedCategory = category;
-                                });
-                              },
-                              child: Text(category),
-                            ),
-                          );
-                        }).toList(),
+                            );
+                          }).toList(),
                     ),
                   ),
                 ),
+                // Menu items grid
                 Expanded(
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
@@ -626,7 +666,7 @@ class _OrderViewState extends State<OrderView> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Header with name and indicators
+                                // Item name and popular indicator
                                 Row(
                                   children: [
                                     Expanded(
@@ -641,6 +681,7 @@ class _OrderViewState extends State<OrderView> {
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
+                                    // Show star icon for popular items
                                     if (item.isPopular)
                                       Icon(
                                         Icons.star,
@@ -650,6 +691,7 @@ class _OrderViewState extends State<OrderView> {
                                   ],
                                 ),
                                 const SizedBox(height: 4),
+                                // Item type and preparation time
                                 Row(
                                   children: [
                                     Text(
@@ -677,7 +719,7 @@ class _OrderViewState extends State<OrderView> {
                                   ],
                                 ),
                                 const SizedBox(height: 6),
-                                // Price
+                                // Item price
                                 Text(
                                   '\$${item.price.toStringAsFixed(2)}',
                                   style: const TextStyle(
@@ -687,6 +729,7 @@ class _OrderViewState extends State<OrderView> {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
+                                // Item description (if available)
                                 if (item.description.isNotEmpty)
                                   Expanded(
                                     child: Text(
@@ -699,6 +742,7 @@ class _OrderViewState extends State<OrderView> {
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                // Allergen warnings (if any)
                                 if (item.allergens.isNotEmpty) ...[
                                   const SizedBox(height: 4),
                                   Row(

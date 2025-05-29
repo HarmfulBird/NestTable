@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 class AnalyticsService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Fetches daily statistics including orders, reservations, revenue, and table occupancy for today
   static Future<Map<String, dynamic>> getDailyStats() async {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -75,6 +76,7 @@ class AnalyticsService {
     }
   }
 
+  // Retrieves weekly statistics with daily revenue breakdown and staff performance data
   static Future<Map<String, dynamic>> getWeeklyStats() async {
     final now = DateTime.now();
     final weekStart = now.subtract(Duration(days: now.weekday - 1));
@@ -158,6 +160,7 @@ class AnalyticsService {
     }
   }
 
+  // Gets monthly statistics including popular items and reservation trends
   static Future<Map<String, dynamic>> getMonthlyStats() async {
     final now = DateTime.now();
     final monthStart = DateTime(now.year, now.month, 1);
@@ -197,8 +200,7 @@ class AnalyticsService {
         for (var item in items) {
           final itemName = item['name'] ?? 'Unknown';
           final quantity = (item['quantity'] ?? 1) as int;
-          itemOrderCounts[itemName] =
-              (itemOrderCounts[itemName] ?? 0) + quantity;
+          itemOrderCounts[itemName] = (itemOrderCounts[itemName] ?? 0) + quantity;
         }
       }
 
@@ -234,6 +236,7 @@ class AnalyticsService {
     }
   }
 
+  // Provides real-time stream of table status counts and occupancy rate
   static Stream<Map<String, dynamic>> getTableStatusStream() {
     return _firestore.collection('Tables').snapshots().map((snapshot) {
       int totalTables = snapshot.docs.length;
@@ -261,12 +264,12 @@ class AnalyticsService {
         'open': openTables,
         'seated': seatedTables,
         'reserved': reservedTables,
-        'occupancyRate':
-            totalTables > 0 ? (seatedTables / totalTables) * 100 : 0.0,
+        'occupancyRate': totalTables > 0 ? (seatedTables / totalTables) * 100 : 0.0,
       };
     });
   }
 
+  // Returns live stream of pending and in-progress order counts
   static Stream<Map<String, dynamic>> getOrdersStatusStream() {
     return _firestore
       .collection('Orders')
@@ -296,6 +299,7 @@ class AnalyticsService {
       });
   }
 
+  // Streams today's total revenue from completed orders in real-time
   static Stream<double> getTodayRevenueStream() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
