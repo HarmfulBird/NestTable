@@ -241,19 +241,19 @@ class ReservationsState extends State<Reservations> {
       final endDateTime = startDateTime.add(const Duration(hours: 2));
 
       await FirebaseFirestore.instance
-          .collection('Reservations')
-          .doc('reservation_$timestamp')
-          .set({
-            'id': timestamp,
-            'customerName': '${firstNameController.text} ${surnameController.text}'.trim(),
-            'tableNumber': int.parse(selectedTable!),
-            'startTime': Timestamp.fromDate(startDateTime),
-            'endTime': Timestamp.fromDate(endDateTime),
-            'partySize': int.parse(guestsController.text),
-            'seated': isEditing ? (tempSeated ?? false) : false,
-            'isFinished': isEditing ? (tempFinished ?? false) : false,
-            'specialNotes': specialNotesController.text,
-          });
+        .collection('Reservations')
+        .doc('reservation_$timestamp')
+        .set({
+          'id': timestamp,
+          'customerName': '${firstNameController.text} ${surnameController.text}'.trim(),
+          'tableNumber': int.parse(selectedTable!),
+          'startTime': Timestamp.fromDate(startDateTime),
+          'endTime': Timestamp.fromDate(endDateTime),
+          'partySize': int.parse(guestsController.text),
+          'seated': isEditing ? (tempSeated ?? false) : false,
+          'isFinished': isEditing ? (tempFinished ?? false) : false,
+          'specialNotes': specialNotesController.text,
+        });
 
       setState(() {
         showOverlay = false;

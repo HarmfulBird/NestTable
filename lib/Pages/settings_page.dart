@@ -150,26 +150,26 @@ class _SettingsPageState extends State<SettingsPage> {
                 showDialog(
                   context: context,
                   builder:
-                      (context) => AlertDialog(
-                        backgroundColor: const Color(0xFF2F3031),
-                        title: const Text(
-                          'Feature Coming Soon',
-                          style: TextStyle(color: Colors.white, fontSize: 20),
-                        ),
-                        content: const Text(
-                          'Dark mode toggle functionality will be available in a future update.',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              'OK',
-                              style: TextStyle(color: Colors.deepPurple),
-                            ),
-                          ),
-                        ],
+                    (context) => AlertDialog(
+                      backgroundColor: const Color(0xFF2F3031),
+                      title: const Text(
+                        'Feature Coming Soon',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
                       ),
+                      content: const Text(
+                        'Dark mode toggle functionality will be available in a future update.',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text(
+                            'OK',
+                            style: TextStyle(color: Colors.deepPurple),
+                          ),
+                        ),
+                      ],
+                    ),
                 );
               },
             ),
@@ -382,9 +382,9 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           items:
-              options.map((option) {
-                return DropdownMenuItem(value: option, child: Text(option));
-              }).toList(),
+            options.map((option) {
+              return DropdownMenuItem(value: option, child: Text(option));
+            }).toList(),
           onChanged: onChanged,
         ),
       ],
@@ -423,26 +423,26 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2F3031),
-            title: const Text(
-              'System Status',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: const Text(
-              'All systems operational ✓',
-              style: TextStyle(color: Colors.green),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(color: Colors.deepPurple),
-                ),
-              ),
-            ],
+        (context) => AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'System Status',
+            style: TextStyle(color: Colors.white),
           ),
+          content: const Text(
+            'All systems operational ✓',
+            style: TextStyle(color: Colors.green),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.deepPurple),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -459,26 +459,26 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2F3031),
-            title: const Text(
-              'Feature Coming Soon',
-              style: TextStyle(color: Colors.white),
-            ),
-            content: const Text(
-              'Data export functionality will be available in a future update.',
-              style: TextStyle(color: Colors.white),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'OK',
-                  style: TextStyle(color: Colors.deepPurple),
-                ),
-              ),
-            ],
+        (context) => AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'Feature Coming Soon',
+            style: TextStyle(color: Colors.white),
           ),
+          content: const Text(
+            'Data export functionality will be available in a future update.',
+            style: TextStyle(color: Colors.white),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: Colors.deepPurple),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
@@ -495,46 +495,46 @@ class _SettingsPageState extends State<SettingsPage> {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            backgroundColor: const Color(0xFF2F3031),
-            title: const Text(
-              'Support',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
+        (context) => AlertDialog(
+          backgroundColor: const Color(0xFF2F3031),
+          title: const Text(
+            'Support',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
             ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Need help? Contact our support team:',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                _buildSupportInfoRow(
-                  Icons.email,
-                  'Email',
-                  'Avery@Fluffytech.co.nz',
-                ),
-                const SizedBox(height: 8),
-                _buildSupportInfoRow(Icons.phone, 'Phone', '0275422208'),
-                const SizedBox(height: 8),
-                _buildSupportInfoRow(Icons.web, 'Website', 'FluffTech.co.nz'),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text(
-                  'Close',
-                  style: TextStyle(color: Colors.deepPurple),
-                ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Need help? Contact our support team:',
+                style: TextStyle(color: Colors.white, fontSize: 16),
               ),
+              const SizedBox(height: 16),
+              _buildSupportInfoRow(
+                Icons.email,
+                'Email',
+                'Avery@Fluffytech.co.nz',
+              ),
+              const SizedBox(height: 8),
+              _buildSupportInfoRow(Icons.phone, 'Phone', '0275422208'),
+              const SizedBox(height: 8),
+              _buildSupportInfoRow(Icons.web, 'Website', 'FluffTech.co.nz'),
             ],
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Close',
+                style: TextStyle(color: Colors.deepPurple),
+              ),
+            ),
+          ],
+        ),
     );
   }
 
