@@ -9,6 +9,7 @@ class StaffData {
   final String lastName;
   final String initials;
   final String role;
+  final String defaultView;
 
   StaffData({
     required this.id,
@@ -16,6 +17,7 @@ class StaffData {
     required this.lastName,
     required this.initials,
     required this.role,
+    this.defaultView = 'Tables',
   });
 }
 
@@ -77,28 +79,29 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
     try {
       // Query Firebase for all staff documents, ordered by ID
       final staffSnapshot =
-        await FirebaseFirestore.instance
-          .collection('Staff')
-          .orderBy('id')
-          .get();
+          await FirebaseFirestore.instance
+              .collection('Staff')
+              .orderBy('id')
+              .get();
 
       // Convert Firestore documents to StaffData objects
       final List<StaffData> fetchedStaff =
-        staffSnapshot.docs.map((doc) {
-          final data = doc.data();
-          // Validate and default the role field
-          String userRole = (data['role'] as String?) ?? 'User';
-          if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
-            userRole = 'User';
-          }
-          return StaffData(
-            id: data['id'] ?? '',
-            firstName: data['firstName'] ?? '',
-            lastName: data['lastName'] ?? '',
-            initials: data['initials'] ?? '',
-            role: userRole,
-          );
-        }).toList();
+          staffSnapshot.docs.map((doc) {
+            final data = doc.data();
+            // Validate and default the role field
+            String userRole = (data['role'] as String?) ?? 'User';
+            if (userRole.isEmpty || !['User', 'Manager'].contains(userRole)) {
+              userRole = 'User';
+            }
+            return StaffData(
+              id: data['id'] ?? '',
+              firstName: data['firstName'] ?? '',
+              lastName: data['lastName'] ?? '',
+              initials: data['initials'] ?? '',
+              role: userRole,
+              defaultView: data['defaultView'] ?? 'Tables',
+            );
+          }).toList();
 
       // Update UI with fetched data
       setState(() {
@@ -182,21 +185,27 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
         lastName: lastName,
         initials: initials,
         role: _selectedRole,
+        defaultView: 'Tables', // Default view for new users
       );
 
       // Save to Firebase using document ID as the staff ID
-      await FirebaseFirestore.instance.collection('Staff').doc(id).set({
-        'id': id,
-        'firstName': firstName,
-        'lastName': lastName,
-        'initials': initials,
-        'role': _selectedRole,
-      });
+      await FirebaseFirestore.instance.collection('Staff').doc(id).set(
+        {
+          'id': id,
+          'firstName': firstName,
+          'lastName': lastName,
+          'initials': initials,
+          'role': _selectedRole,
+          'defaultView':
+              _isEditing ? null : 'Tables', // Only set default for new users
+        },
+        SetOptions(merge: true),
+      ); // Use merge to preserve existing defaultView for updates
 
       // Update local list based on whether we're editing or adding
       if (_isEditing &&
-        _editingIndex >= 0 &&
-        _editingIndex < _staffList.length) {
+          _editingIndex >= 0 &&
+          _editingIndex < _staffList.length) {
         // Update existing staff member
         setState(() {
           _staffList[_editingIndex] = staffData;
@@ -317,31 +326,34 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                               color: Colors.grey.shade400,
                                             ),
                                             enabledBorder:
-                                              OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                  color:Colors.grey.shade700,
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.grey.shade700,
+                                                  ),
                                                 ),
-                                              ),
                                             focusedBorder:
-                                              const OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                  color: Colors.white,
+                                                const OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.white,
+                                                  ),
                                                 ),
-                                              ),
                                           ),
                                           style: const TextStyle(
                                             color: Colors.white,
                                           ),
                                           // Disable editing when updating existing staff
                                           enabled: !_isEditing,
-                                          keyboardType: TextInputType.number,
+                                          keyboardType:
+                                              TextInputType.number,
                                           validator: (value) {
                                             if (value == null ||
-                                              value.isEmpty) {
+                                                value.isEmpty) {
                                               return 'Please enter staff ID';
                                             }
                                             // Validate 6-digit format
-                                            if (!RegExp(r'^\d{6}$',).hasMatch(value)) {
+                                            if (!RegExp(
+                                              r'^\d{6}$',
+                                            ).hasMatch(value)) {
                                               return 'ID must be exactly 6 digits';
                                             }
                                             return null;
@@ -356,10 +368,8 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                             ? null
                                             : _generateRandomId,
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor:
-                                            Colors.deepPurple,
-                                          disabledBackgroundColor:
-                                            Colors.grey,
+                                          backgroundColor: Colors.deepPurple,
+                                          disabledBackgroundColor: Colors.grey,
                                         ),
                                         child: const Text(
                                           'Random',
@@ -400,9 +410,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                     items:
                                       _roleOptions
                                         .map(
-                                          (
-                                            role,
-                                          ) => DropdownMenuItem<String>(
+                                          (role,) => DropdownMenuItem<String>(
                                             value: role,
                                             child: Text(
                                               role,
@@ -411,8 +419,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                               ),
                                             ),
                                           ),
-                                        )
-                                        .toList(),
+                                        ).toList(),
                                     onChanged: (value) {
                                       if (value != null) {
                                         setState(() {
@@ -514,8 +521,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                 labelStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                 ),
-                                helperText:
-                                    'Auto-generated from names but can be edited',
+                                helperText: 'Auto-generated from names but can be edited',
                                 helperStyle: TextStyle(
                                   color: Colors.grey.shade400,
                                 ),
@@ -582,8 +588,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          _staffList.isEmpty
-                            ? // Show message when no staff members exist
+                          _staffList.isEmpty ? // Show message when no staff members exist
                             const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(16.0),
@@ -597,7 +602,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                             ListView.builder(
                               shrinkWrap: true,
                               physics:
-                                const NeverScrollableScrollPhysics(),
+                                  const NeverScrollableScrollPhysics(),
                               itemCount: _staffList.length,
                               itemBuilder: (context, index) {
                                 final staff = _staffList[index];
@@ -627,8 +632,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                     ),
                                     // Staff ID and role information
                                     subtitle: Column(
-                                      crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'ID: ${staff.id}',
@@ -666,8 +670,7 @@ class StaffDataUploaderState extends State<StaffDataUploader> {
                                             Icons.delete,
                                             color: Colors.white,
                                           ),
-                                          onPressed:
-                                            () => _deleteStaff(staff.id),
+                                          onPressed: () => _deleteStaff(staff.id),
                                         ),
                                       ],
                                     ),

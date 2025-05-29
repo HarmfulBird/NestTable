@@ -10,6 +10,7 @@ import 'Pages/management_dashboard.dart';
 import 'Pages/login_page.dart';
 import 'Pages/servers_page.dart';
 import 'Services/role_service.dart';
+import 'Services/user_preference_service.dart';
 import 'Pages/settings_page.dart';
 
 // Entry point of the app - initializes Firebase and starts the app
@@ -57,6 +58,37 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   // Tracks which navigation item is currently selected
   int _selectedIndex = 0;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDefaultView();
+  }
+
+  // Load user's default view preference and set initial page
+  Future<void> _loadDefaultView() async {
+    try {
+      final defaultView = await UserPreferenceService.getDefaultView();
+      final defaultIndex = UserPreferenceService.getDefaultViewIndex(
+        defaultView,
+      );
+      if (mounted) {
+        setState(() {
+          _selectedIndex = defaultIndex;
+          _isInitialized = true;
+        });
+      }
+    } catch (e) {
+      // If loading fails, default to Tables (index 0)
+      if (mounted) {
+        setState(() {
+          _selectedIndex = 0;
+          _isInitialized = true;
+        });
+      }
+    }
+  }
 
   // List of all available pages in the app navigation
   final List<Widget> _pages = [
@@ -119,6 +151,15 @@ class HomeScreenState extends State<HomeScreen> {
   // Builds the main screen layout with top bar and sidebar navigation
   @override
   Widget build(BuildContext context) {
+    // Show loading indicator while default view is being loaded
+    if (!_isInitialized) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF212224),
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.deepPurple),
+        ),
+      );
+    }
     return Scaffold(
       // Prevent keyboard from pushing content up
       resizeToAvoidBottomInset: false,
@@ -160,4 +201,3 @@ class TopBar extends StatelessWidget {
     );
   }
 }
-

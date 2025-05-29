@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../Services/role_service.dart';
+import '../Services/user_preference_service.dart';
 import '../Components/datetime.dart';
-import 'DataUploaders/Uploaders/staff_data_crud.dart';
+import 'user_management_page.dart';
 import 'login_page.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -16,6 +16,7 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isManager = false;
   String _currentRole = 'User';
   String _username = '';
+  String _currentDefaultView = 'Tables';
   bool _isLoading = true;
 
   @override
@@ -29,12 +30,14 @@ class _SettingsPageState extends State<SettingsPage> {
       final isManager = await RoleService.isManager();
       final role = await RoleService.getCurrentUserRole();
       final username = RoleService.getCurrentUsername() ?? 'Unknown';
-      
+      final defaultView = await UserPreferenceService.getDefaultView();
+
       if (mounted) {
         setState(() {
           _isManager = isManager;
           _currentRole = role;
           _username = username;
+          _currentDefaultView = defaultView;
           _isLoading = false;
         });
       }
@@ -68,25 +71,25 @@ class _SettingsPageState extends State<SettingsPage> {
             // Header
             const DateTimeBox(),
             const SizedBox(height: 24),
-            
+
             // User Profile Section
             _buildUserProfileCard(),
             const SizedBox(height: 20),
-            
+
             // App Settings Section
             _buildAppSettingsCard(),
             const SizedBox(height: 20),
-            
+
             // System Settings (Manager Only)
             if (_isManager) ...[
               _buildSystemSettingsCard(),
               const SizedBox(height: 20),
             ],
-            
+
             // About Section
             _buildAboutCard(),
             const SizedBox(height: 20),
-            
+
             // Logout Button
             _buildLogoutButton(),
           ],
@@ -159,10 +162,12 @@ class _SettingsPageState extends State<SettingsPage> {
             _buildDropdownSetting(
               'Default View',
               'Choose your default page on app start',
-              ['Tables', 'Reservations', 'Orders', 'Servers'],
-              'Tables',
+              ['Tables', 'Reservations', 'Orders'],
+              _currentDefaultView,
               (value) {
-                // Save default view preference
+                if (value != null) {
+                  _saveDefaultView(value);
+                }
               },
             ),
           ],
@@ -279,10 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         child: const Text(
           'Logout',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -296,10 +298,7 @@ class _SettingsPageState extends State<SettingsPage> {
         children: [
           Text(
             label,
-            style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey.shade400, fontSize: 16),
           ),
           Text(
             value,
@@ -322,14 +321,8 @@ class _SettingsPageState extends State<SettingsPage> {
   ) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: Colors.grey.shade400),
-      ),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade400)),
       trailing: Switch(
         value: value,
         onChanged: onChanged,
@@ -348,20 +341,11 @@ class _SettingsPageState extends State<SettingsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-          ),
-        ),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: TextStyle(
-            color: Colors.grey.shade400,
-            fontSize: 14,
-          ),
+          style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
@@ -376,12 +360,10 @@ class _SettingsPageState extends State<SettingsPage> {
               borderSide: BorderSide(color: Colors.white),
             ),
           ),
-          items: options.map((option) {
-            return DropdownMenuItem(
-              value: option,
-              child: Text(option),
-            );
-          }).toList(),
+          items:
+              options.map((option) {
+                return DropdownMenuItem(value: option, child: Text(option));
+              }).toList(),
           onChanged: onChanged,
         ),
       ],
@@ -397,14 +379,8 @@ class _SettingsPageState extends State<SettingsPage> {
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(icon, color: Colors.white70),
-      title: Text(
-        title,
-        style: const TextStyle(color: Colors.white),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: TextStyle(color: Colors.grey.shade400),
-      ),
+      title: Text(title, style: const TextStyle(color: Colors.white)),
+      subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade400)),
       trailing: const Icon(
         Icons.arrow_forward_ios,
         color: Colors.white70,
@@ -419,25 +395,27 @@ class _SettingsPageState extends State<SettingsPage> {
     // Implement password change dialog
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2F3031),
-        title: const Text('Change Password', style: TextStyle(color: Colors.white)),
-        content: const Text('Password change functionality would be implemented here.', 
-                           style: TextStyle(color: Colors.white)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Colors.deepPurple)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2F3031),
+            title: const Text(
+              'Change Password',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              'Password change functionality would be implemented here.',
+              style: TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  void _performBackup() {
-    // Implement backup functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Backup initiated...')),
     );
   }
 
@@ -445,34 +423,63 @@ class _SettingsPageState extends State<SettingsPage> {
     // Implement system status check
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2F3031),
-        title: const Text('System Status', style: TextStyle(color: Colors.white)),
-        content: const Text('All systems operational ✓', style: TextStyle(color: Colors.green)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK', style: TextStyle(color: Colors.deepPurple)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2F3031),
+            title: const Text(
+              'System Status',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              'All systems operational ✓',
+              style: TextStyle(color: Colors.green),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
   void _manageUsers() {
-    // Navigate to user management (could reuse your staff data CRUD)
+    // Navigate to user management wrapper page
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const StaffDataUploader(),
-      ),
+      MaterialPageRoute(builder: (context) => const UserManagementPage()),
     );
   }
 
   void _exportData() {
-    // Implement data export functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Data export started...')),
+    // Show feature coming soon dialog
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2F3031),
+            title: const Text(
+              'Feature Coming Soon',
+              style: TextStyle(color: Colors.white),
+            ),
+            content: const Text(
+              'Data export functionality will be available in a future update.',
+              style: TextStyle(color: Colors.white),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(
+                  'OK',
+                  style: TextStyle(color: Colors.deepPurple),
+                ),
+              ),
+            ],
+          ),
     );
   }
 
@@ -496,10 +503,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: const Color(0xFF2F3031),
-          title: const Text(
-            'Logout',
-            style: TextStyle(color: Colors.white),
-          ),
+          title: const Text('Logout', style: TextStyle(color: Colors.white)),
           content: const Text(
             'Are you sure you want to logout?',
             style: TextStyle(color: Colors.white),
@@ -516,9 +520,7 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () {
                 Navigator.pop(context);
                 Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(
-                    builder: (context) => const LoginPage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
                 );
               },
               child: Text(
@@ -530,5 +532,30 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       },
     );
+  }
+
+  // Save the user's default view preference to Firestore
+  Future<void> _saveDefaultView(String newDefaultView) async {
+    try {
+      final success = await UserPreferenceService.setDefaultView(
+        newDefaultView,
+      );
+      if (success) {
+        setState(() {
+          _currentDefaultView = newDefaultView;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Default view changed to $newDefaultView')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save preference')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error saving preference: $e')));
+    }
   }
 }

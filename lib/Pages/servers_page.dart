@@ -55,21 +55,21 @@ class _ServersPageState extends State<ServersPage> {
   void _initializeStreams() {
     // Stream for staff data ordered by first name
     _staffStream =
-      FirebaseFirestore.instance
-        .collection('Staff')
-        .orderBy('firstName')
-        .snapshots();
+        FirebaseFirestore.instance
+            .collection('Staff')
+            .orderBy('firstName')
+            .snapshots();
 
     // Stream for table data ordered by table number
     _tablesStream =
-      FirebaseFirestore.instance
-        .collection('Tables')
-        .orderBy('tableNumber')
-        .snapshots();
+        FirebaseFirestore.instance
+            .collection('Tables')
+            .orderBy('tableNumber')
+            .snapshots();
 
     // Stream for reservation data (used for table status checking)
     _reservationsStream =
-      FirebaseFirestore.instance.collection('Reservations').snapshots();
+        FirebaseFirestore.instance.collection('Reservations').snapshots();
   }
 
   // Initialize user data and check manager permissions
@@ -83,10 +83,10 @@ class _ServersPageState extends State<ServersPage> {
       String userInitials = '';
       if (username != null) {
         var staffQuery =
-          await FirebaseFirestore.instance
-            .collection('Staff')
-            .where('id', isEqualTo: username)
-            .get();
+            await FirebaseFirestore.instance
+                .collection('Staff')
+                .where('id', isEqualTo: username)
+                .get();
         if (staffQuery.docs.isNotEmpty) {
           userInitials = staffQuery.docs.first.data()['initials'] ?? '';
         }
@@ -112,16 +112,16 @@ class _ServersPageState extends State<ServersPage> {
     // Listen to staff collection changes and update local staff list
     _staffStream.listen((staffSnapshot) {
       final staffList =
-        staffSnapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return {
-            'id': data['id'] ?? '',
-            'firstName': data['firstName'] ?? '',
-            'lastName': data['lastName'] ?? '',
-            'initials': data['initials'] ?? '',
-            'role': data['role'] ?? 'User',
-          };
-        }).toList();
+          staffSnapshot.docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            return {
+              'id': data['id'] ?? '',
+              'firstName': data['firstName'] ?? '',
+              'lastName': data['lastName'] ?? '',
+              'initials': data['initials'] ?? '',
+              'role': data['role'] ?? 'User',
+            };
+          }).toList();
 
       if (mounted) {
         setState(() {
@@ -156,20 +156,20 @@ class _ServersPageState extends State<ServersPage> {
         // For reserved/seated tables, get guest count from active reservations
         if (status == 'Reserved' || status == 'Seated') {
           final reservationSnapshot =
-            await FirebaseFirestore.instance
-              .collection('Reservations')
-              .where('tableNumber', isEqualTo: tableNumber)
-              .where(
-                'startTime',
-                isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
-              )
-              .where(
-                'startTime',
-                isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
-              )
-              .orderBy('startTime', descending: true)
-              .limit(1)
-              .get();
+              await FirebaseFirestore.instance
+                  .collection('Reservations')
+                  .where('tableNumber', isEqualTo: tableNumber)
+                  .where(
+                    'startTime',
+                    isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay),
+                  )
+                  .where(
+                    'startTime',
+                    isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
+                  )
+                  .orderBy('startTime', descending: true)
+                  .limit(1)
+                  .get();
 
           if (reservationSnapshot.docs.isNotEmpty) {
             final reservationData = reservationSnapshot.docs.first.data();
@@ -247,7 +247,8 @@ class _ServersPageState extends State<ServersPage> {
   // Generate a random 6-digit ID for new users
   void _generateRandomId() {
     final random = Random();
-    final id = (random.nextInt(900000) + 100000).toString(); // Generates 100000-999999
+    final id =
+        (random.nextInt(900000) + 100000).toString(); // Generates 100000-999999
     setState(() {
       _idController.text = id;
     });
@@ -265,15 +266,15 @@ class _ServersPageState extends State<ServersPage> {
       final id = _idController.text;
       final firstName = _firstNameController.text;
       final lastName = _lastNameController.text;
-      final initials = _initialsController.text;
-
-      // Create new staff document in Firestore
+      final initials =
+          _initialsController.text; // Create new staff document in Firestore
       await FirebaseFirestore.instance.collection('Staff').doc(id).set({
         'id': id,
         'firstName': firstName,
         'lastName': lastName,
         'initials': initials,
         'role': _selectedRole,
+        'defaultView': 'Tables',
       });
 
       // Reset form and close overlay
@@ -295,9 +296,9 @@ class _ServersPageState extends State<ServersPage> {
   Widget _buildMyTablesSection() {
     // Filter tables to show only those assigned to current user
     final myTables =
-      allTables
-        .where((table) => table['assignedServer'] == currentUserInitials)
-        .toList();
+        allTables
+            .where((table) => table['assignedServer'] == currentUserInitials)
+            .toList();
 
     return Expanded(
       child: Container(
@@ -326,48 +327,49 @@ class _ServersPageState extends State<ServersPage> {
             const SizedBox(height: 16),
             Expanded(
               child:
-                myTables.isEmpty ? // Empty state when user has no assigned tables
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 40),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2F3031),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.grey.shade700.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.table_restaurant,
-                          color: Colors.grey.shade600,
-                          size: 64,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No tables assigned to you',
-                          style: TextStyle(
-                            color: Colors.grey.shade400,
-                            fontSize: 20,
+                  myTables.isEmpty
+                      ? // Empty state when user has no assigned tables
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 40),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2F3031),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Colors.grey.shade700.withOpacity(0.3),
+                            width: 1,
                           ),
-                          textAlign: TextAlign.center,
                         ),
-                      ],
-                    ),
-                  )
-                  :
-                  // List of assigned tables
-                  SingleChildScrollView(
-                    child: Column(
-                      children:
-                        myTables
-                          .map((table) => _buildMyTableCard(table))
-                          .toList(),
-                    ),
-                  ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.table_restaurant,
+                              color: Colors.grey.shade600,
+                              size: 64,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'No tables assigned to you',
+                              style: TextStyle(
+                                color: Colors.grey.shade400,
+                                fontSize: 20,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      )
+                      :
+                      // List of assigned tables
+                      SingleChildScrollView(
+                        child: Column(
+                          children:
+                              myTables
+                                  .map((table) => _buildMyTableCard(table))
+                                  .toList(),
+                        ),
+                      ),
             ),
           ],
         ),
@@ -379,9 +381,9 @@ class _ServersPageState extends State<ServersPage> {
   Widget _buildMyTablesSectionMobile() {
     // Filter tables to show only those assigned to current user
     final myTables =
-      allTables
-        .where((table) => table['assignedServer'] == currentUserInitials)
-        .toList();
+        allTables
+            .where((table) => table['assignedServer'] == currentUserInitials)
+            .toList();
 
     return Container(
       constraints: const BoxConstraints(
@@ -413,48 +415,49 @@ class _ServersPageState extends State<ServersPage> {
           const SizedBox(height: 16),
           Flexible(
             child:
-              myTables.isEmpty ? // Empty state when user has no assigned tables
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2F3031),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.grey.shade700.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.table_restaurant,
-                        color: Colors.grey.shade600,
-                        size: 64,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'No tables assigned to you',
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 20,
+                myTables.isEmpty
+                    ? // Empty state when user has no assigned tables
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 40),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2F3031),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Colors.grey.shade700.withOpacity(0.3),
+                          width: 1,
                         ),
-                        textAlign: TextAlign.center,
                       ),
-                    ],
-                  ),
-                )
-                :
-                // List of assigned tables
-                SingleChildScrollView(
-                  child: Column(
-                    children:
-                      myTables
-                        .map((table) => _buildMyTableCard(table))
-                        .toList(),
-                  ),
-                ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.table_restaurant,
+                            color: Colors.grey.shade600,
+                            size: 64,
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'No tables assigned to you',
+                            style: TextStyle(
+                              color: Colors.grey.shade400,
+                              fontSize: 20,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    )
+                    :
+                    // List of assigned tables
+                    SingleChildScrollView(
+                      child: Column(
+                        children:
+                            myTables
+                                .map((table) => _buildMyTableCard(table))
+                                .toList(),
+                      ),
+                    ),
           ),
         ],
       ),
@@ -512,8 +515,8 @@ class _ServersPageState extends State<ServersPage> {
                           ),
                           child: Text(
                             serverInitials.isEmpty
-                              ? 'Unassigned'
-                              : serverInitials,
+                                ? 'Unassigned'
+                                : serverInitials,
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -546,9 +549,9 @@ class _ServersPageState extends State<ServersPage> {
                       spacing: 8,
                       runSpacing: 8,
                       children:
-                        tables
-                          .map((table) => _buildTableCard(table, false))
-                          .toList(),
+                          tables
+                              .map((table) => _buildTableCard(table, false))
+                              .toList(),
                     ),
                   ],
                 ),
@@ -679,7 +682,8 @@ class _ServersPageState extends State<ServersPage> {
       decoration: BoxDecoration(
         color: const Color(0xFF3E3F41),
         borderRadius: BorderRadius.circular(8),
-        border: isMyTable ? Border.all(color: Colors.deepPurple, width: 2) : null,
+        border:
+            isMyTable ? Border.all(color: Colors.deepPurple, width: 2) : null,
       ),
       child: Stack(
         children: [
@@ -774,7 +778,8 @@ class _ServersPageState extends State<ServersPage> {
                   const SizedBox(height: 16),
                   // Dropdown to select new server assignment
                   DropdownButtonFormField<String>(
-                    value: selectedServer?.isEmpty == true ? null : selectedServer,
+                    value:
+                        selectedServer?.isEmpty == true ? null : selectedServer,
                     dropdownColor: const Color(0xFF2F3031),
                     style: const TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
@@ -854,7 +859,8 @@ class _ServersPageState extends State<ServersPage> {
             builder: (context, constraints) {
               // Responsive sizing for mobile vs desktop
               final isMobile = constraints.maxWidth <= 600;
-              final overlayWidth = isMobile ? constraints.maxWidth * 0.9 : 400.0;
+              final overlayWidth =
+                  isMobile ? constraints.maxWidth * 0.9 : 400.0;
 
               return Container(
                 width: overlayWidth,
@@ -961,19 +967,19 @@ class _ServersPageState extends State<ServersPage> {
                           ),
                         ),
                         items:
-                          _roleOptions
-                              .map(
-                                (role) => DropdownMenuItem<String>(
-                                  value: role,
-                                  child: Text(
-                                    role,
-                                    style: const TextStyle(
-                                      color: Colors.white,
+                            _roleOptions
+                                .map(
+                                  (role) => DropdownMenuItem<String>(
+                                    value: role,
+                                    child: Text(
+                                      role,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                              .toList(),
+                                )
+                                .toList(),
                         onChanged: (value) {
                           if (value != null) {
                             setState(() {
@@ -1051,7 +1057,8 @@ class _ServersPageState extends State<ServersPage> {
                         decoration: InputDecoration(
                           labelText: 'Initials',
                           labelStyle: TextStyle(color: Colors.grey.shade400),
-                          helperText: 'Auto-generated from names but can be edited',
+                          helperText:
+                              'Auto-generated from names but can be edited',
                           helperStyle: TextStyle(color: Colors.grey.shade400),
                           enabledBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.grey.shade700),
@@ -1137,9 +1144,10 @@ class _ServersPageState extends State<ServersPage> {
                 final screenWidth = constraints.maxWidth;
                 final cardWidth = 280.0;
                 final spacing = 16.0;
-                final cardsPerRow = ((screenWidth + spacing) / (cardWidth + spacing))
-                  .floor()
-                  .clamp(1, 10);
+                final cardsPerRow = ((screenWidth + spacing) /
+                        (cardWidth + spacing))
+                    .floor()
+                    .clamp(1, 10);
 
                 // Create rows of table cards
                 final List<Widget> rows = [];
@@ -1438,9 +1446,9 @@ class _ServersPageState extends State<ServersPage> {
                         child: SingleChildScrollView(
                           padding: const EdgeInsets.all(16),
                           child:
-                            selectedTabIndex == 0
-                              ? _buildAllTablesSection()
-                              : _buildAllAssignmentsSection(),
+                              selectedTabIndex == 0
+                                  ? _buildAllTablesSection()
+                                  : _buildAllAssignmentsSection(),
                         ),
                       ),
                     ],
@@ -1490,9 +1498,9 @@ class _ServersPageState extends State<ServersPage> {
                         child: SingleChildScrollView(
                           padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
                           child:
-                            selectedTabIndex == 0
-                              ? _buildAllTablesSection()
-                              : _buildAllAssignmentsSection(),
+                              selectedTabIndex == 0
+                                  ? _buildAllTablesSection()
+                                  : _buildAllAssignmentsSection(),
                         ),
                       ),
                     ],
@@ -1514,207 +1522,207 @@ class _ServersPageState extends State<ServersPage> {
       width: double.infinity,
       padding: EdgeInsets.all(isMobile ? 16 : 20),
       child:
-        isMobile
-          ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Tab switching buttons for mobile layout
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3E3F41),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedTabIndex = 0;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                              selectedTabIndex == 0
-                                ? Colors.deepPurple
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'All Tables',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+          isMobile
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tab switching buttons for mobile layout
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3E3F41),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 0;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    selectedTabIndex == 0
+                                        ? Colors.deepPurple
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'All Tables',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                    Flexible(
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedTabIndex = 1;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                              selectedTabIndex == 1
-                                ? Colors.deepPurple
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'Server Assignments',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                        Flexible(
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                selectedTabIndex = 1;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    selectedTabIndex == 1
+                                        ? Colors.deepPurple
+                                        : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Server Assignments',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Create user button for managers (mobile)
-              if (isManager) ...[
-                const SizedBox(height: 12),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      showCreateUserOverlay = true;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
+                      ],
                     ),
                   ),
-                  icon: const Icon(
-                    Icons.person_add,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  label: const Text(
-                    'Create User',
-                    style: TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ),
-              ],
-            ],
-          )
-          : Row(
-            children: [
-              // Tab buttons for desktop layout
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF3E3F41),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
+                  // Create user button for managers (mobile)
+                  if (isManager) ...[
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {
                         setState(() {
-                          selectedTabIndex = 0;
+                          showCreateUserOverlay = true;
                         });
                       },
-                      child: Container(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        decoration: BoxDecoration(
-                          color:
-                            selectedTabIndex == 0
-                              ? Colors.deepPurple
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'All Tables',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.person_add,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      label: const Text(
+                        'Create User',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
+                  ],
+                ],
+              )
+              : Row(
+                children: [
+                  // Tab buttons for desktop layout
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3E3F41),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedTabIndex = 0;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  selectedTabIndex == 0
+                                      ? Colors.deepPurple
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'All Tables',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedTabIndex = 1;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  selectedTabIndex == 1
+                                      ? Colors.deepPurple
+                                      : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'Server Assignments',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Spacer(),
+                  // Create user button for managers (desktop)
+                  if (isManager) ...[
+                    ElevatedButton.icon(
+                      onPressed: () {
                         setState(() {
-                          selectedTabIndex = 1;
+                          showCreateUserOverlay = true;
                         });
                       },
-                      child: Container(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
-                        decoration: BoxDecoration(
-                          color:
-                            selectedTabIndex == 1
-                              ? Colors.deepPurple
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          'Server Assignments',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
+                      ),
+                      icon: const Icon(Icons.person_add, color: Colors.white),
+                      label: const Text(
+                        'Create User',
+                        style: TextStyle(color: Colors.white),
                       ),
                     ),
+                    const SizedBox(width: 12),
                   ],
-                ),
+                ],
               ),
-              const Spacer(),
-              // Create user button for managers (desktop)
-              if (isManager) ...[
-                ElevatedButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      showCreateUserOverlay = true;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                  ),
-                  icon: const Icon(Icons.person_add, color: Colors.white),
-                  label: const Text(
-                    'Create User',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 12),
-              ],
-            ],
-          ),
     );
   }
 }
