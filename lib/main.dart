@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import '../firebase_options.dart';
 import 'package:provider/provider.dart';
 import 'Pages/tableview_simple.dart';
 import 'Pages/reservations.dart';
